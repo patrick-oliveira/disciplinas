@@ -1,0 +1,8 @@
+*.exe
+*.metadata
+*.classpath
+*.project
+*.settings
+bin
+*.vscode
+*.out
