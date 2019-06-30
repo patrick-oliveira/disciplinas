@@ -4,7 +4,7 @@ public class CaixaAtendimento {
 	private int identificador = -1;
 	public static int senha = 0;
 	
-	public void criaCaixa(int identificador) {
+	public CaixaAtendimento(int identificador) {
 		setIdentificador(identificador);
 	}
 	public void setIdentificador(int identificador) {

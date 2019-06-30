@@ -6,8 +6,8 @@ public class MatrizRacional {
 	public NumeroRacional[][] matriz;
 	
 	public MatrizRacional() {
-		this.N = NumeroAleatorio.getAleatorio();
-		this.M = NumeroAleatorio.getAleatorio();
+		this.N = 3;
+		this.M = 3;
 		this.matriz = new NumeroRacional[this.N][this.M];
 		for(int i = 0; i < this.N; i++) {
 			for(int j = 0; j < this.M; j++) {
@@ -22,7 +22,7 @@ public class MatrizRacional {
 		this.matriz = new NumeroRacional[n][m];
 		for(int i = 0; i < this.N; i++) {
 			for(int j = 0; j < this.M; j++) {
-				this.matriz[i][j] = new NumeroRacional();
+				this.matriz[i][j] = new NumeroRacional(0, 1);
 			}
 		}
 	}

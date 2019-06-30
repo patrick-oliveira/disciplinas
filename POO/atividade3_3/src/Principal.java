@@ -23,20 +23,17 @@ public class Principal {
 		
 		for(i = 0; i < N; i++) {
 			sorteio[i] = new NumeroLoteria();
-			sorteio[i].setNumeroSorteio(i);
 			System.out.println("Sorteio "+(i+1)+" - "+sorteio[i].toString());
-			sorteio[i].ganhou(aposta);
-		}
-		
-		System.out.println("Aposta: "+aposta.toString());
-		for(i = 0; i < N; i++) {
-			if(sorteio[i].getSorteio_Vencedor()) {
-				System.out.println("Ganhou no sorteio "+i);
+			if(sorteio[i].ganhou(aposta)) {
 				aux = false;
 			}
 		}
+		
+		System.out.println("Aposta: "+aposta.toString());
 		if(aux) {
 			System.out.println("Não ganhou em nenhum sorteio.");
+		} else {
+			System.out.println("Ganhou em um sorteio.");
 		}
 		
 		leitor.close();

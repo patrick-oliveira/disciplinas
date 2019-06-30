@@ -7,9 +7,9 @@ public class Principal {
 		MatrizRacional B = new MatrizRacional();
 		
 		int[] dimA = A.getDim();
-		int[] dimB = B.getDim();
 		
 		MatrizRacional C = new MatrizRacional(dimA[0], dimA[1]);
+		MatrizRacional D = new MatrizRacional(5, 2);
 		
 		System.out.println("A = ");
 		A.Imprime();
@@ -20,16 +20,19 @@ public class Principal {
 		System.out.println("\nC = ");
 		C.Imprime();
 		
+		System.out.println("\nD = ");
+		D.Imprime();
+		
 		System.out.println("\nA + C =");
 		A.Soma(C);
 		A.Imprime();
 		
-		System.out.println("\nB + A? ");
+		System.out.println("\nB + A = ");
 		B.Soma(A);
-		if(dimA[0] == dimB[0] && dimA[1] == dimB[1]) {
-			System.out.println("= ");
-			B.Imprime();
-		}
+		B.Imprime();
+		
+		System.out.println("\nC + D?");
+		C.Soma(D);
 	}
 
 }

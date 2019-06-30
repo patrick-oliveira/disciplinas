@@ -11,8 +11,7 @@ public class Principal {
 		Scanner leitor = new Scanner(System.in);
 		
 		for(i = 0; i < 5; i++) {
-			caixas[i] = new CaixaAtendimento();
-			caixas[i].criaCaixa(i+1);
+			caixas[i] = new CaixaAtendimento(i+1);
 		}
 		
 		do {
