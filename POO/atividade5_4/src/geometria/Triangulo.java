@@ -1,52 +1,47 @@
 package geometria;
 
-public class Triangulo {
-	float a;
-	float b;
-	float c;
-	float area;
-	float perimetro;
+public class Triangulo extends Poligono {
 	
 	public Triangulo(float a, float b, float c) {
-		this.a = a;
-		this.b = b;
-		this.c = c;
-		setArea();
-		setPerimetro();
+		super(a, b, c);
 	}
 	
-	private void setArea() {
-		float altura = (float)Math.sqrt(Math.pow(this.a, 2) + Math.pow(this.c/2.0, 2));
-		this.area = (float)(this.c*altura/2.0);
+	public void setNumeroLados() {
+		this.numero_lados = 3;
+	}
+
+	public void setArea() {
+		float a = this.lados[0];
+		float b = this.lados[1];
+		float c = this.lados[2];
+		
+		float S = (a+b+c)/2.0f;
+		
+		this.area = (float)(Math.sqrt(S*(S-a)*(S-b)*(S-c)));
 	}
 	
-	private void setPerimetro() {
-		this.perimetro = this.a + this.b + this.c;
+	public void setPerimetro() {
+		float a = this.lados[0];
+		float b = this.lados[1];
+		float c = this.lados[2];
+		this.perimetro = a + b + c;
 	}
 	
 	public float getA() {
-		return this.a;
+		return this.lados[0];
 	}
 	
 	public float getB() {
-		return this.b;
+		return this.lados[1];
 	}
 	
 	public float getC() {
-		return this.c;
-	}
-	
-	public float getArea() {
-		return this.area;
-	}
-	
-	public float getPerimetro() {
-		return this.perimetro;
+		return this.lados[2];
 	}
 	
 	@Override
 	public String toString() {
-		return "Tipo: Triângulo"+"\nÁrea: "+((Float)this.area).toString()
-				+"\nPerímetro: "+((Float)this.perimetro).toString();
+		return "Tipo: Triangulo"+"\nArea: "+((Float)this.area).toString()
+				+"\nPerimetro: "+((Float)this.perimetro).toString();
 	}
 }

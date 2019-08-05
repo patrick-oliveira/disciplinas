@@ -41,4 +41,8 @@ public class Funcionario {
 		
 		return 0;
 	}
+	
+	public String toString() {
+		return "";
+	}
 }

@@ -1,8 +1,8 @@
 package funcionario;
 
 public class Horista extends Funcionario{
-	private float totalHoras;
-	private float valorHora;
+	private float totalHoras = 0;
+	private float valorHora = 10;
 	
 	public Horista(String nome, String cpf, String setor) {
 		super(nome, cpf, setor);
@@ -24,10 +24,11 @@ public class Horista extends Funcionario{
 		return this.valorHora;
 	}
 	
+	@Override
 	public float calculaSalarioMensal() {
 		if(totalHoras > 160) {
 			float diferenca = this.totalHoras - 160;
-			return this.totalHoras*this.valorHora + (float)(1.4*diferenca*this.valorHora);
+			return this.valorHora*160.0f + (float)(1.4*diferenca*this.valorHora);
 		} else {
 			return this.totalHoras*this.valorHora;
 		}

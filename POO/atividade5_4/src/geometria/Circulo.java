@@ -1,26 +1,29 @@
 package geometria;
 
-public class Circulo {
+public class Circulo extends FiguraPlana {
 	float raio;
-	float area;
-	float perimetro;
-	int vertices = 1000;
 	
 	public Circulo(float raio) {
-		this.raio = raio;
+		super();
+		setRaio(raio);
 		setArea();
 		setPerimetro();
+		setNumeroLados();
+	}
+	
+	public void setNumeroLados() {
+		this.numero_lados = Integer.MAX_VALUE;
 	}
 	
 	public void setRaio(float raio) {
 		this.raio = raio;
 	}
 	
-	private void setArea() {
+	public void setArea() {
 		this.area = (float)(Math.PI*Math.pow(this.raio, 2));
 	}
 	
-	private void setPerimetro() {
+	public void setPerimetro() {
 		this.perimetro = (float)(Math.PI*2*this.raio);
 	}
 	
@@ -28,17 +31,19 @@ public class Circulo {
 		return this.raio;
 	}
 	
+	@Override
 	public float getArea() {
 		return this.area;
 	}
 	
+	@Override
 	public float getPerimetro() {
 		return this.perimetro;
 	}
 	
 	@Override
 	public String toString() {
-		return "Tipo: Circulo"+"\nÁrea: "+((Float)this.area).toString()
-				+"\nPerímetro: "+((Float)this.perimetro).toString();
+		return "Tipo: Circulo"+"\nArea: "+((Float)this.area).toString()
+				+"\nPerimetro: "+((Float)this.perimetro).toString();
 	}
 }

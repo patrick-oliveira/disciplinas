@@ -1,45 +1,40 @@
 package geometria;
 
-public class Retangulo {
-	float a;
-	float b;
-	float area;
-	float perimetro;
+public class Retangulo extends Poligono {
 	
 	public Retangulo(float a, float b) {
-		this.a = a;
-		this.b = b;
+		super(a, b);
 		setArea();
 		setPerimetro();
 	}
 	
-	private void setArea() {
-		this.area = this.a*this.b;
+	public void setNumeroLados() {
+		this.numero_lados = 4;
 	}
 	
-	private void setPerimetro() {
-		this.perimetro = 2*(this.a + this.b);
+	public void setArea() {
+		float a = this.lados[0];
+		float b = this.lados[1];
+		this.area = a*b;
+	}
+	
+	public void setPerimetro() {
+		float a = this.lados[0];
+		float b = this.lados[1];
+		this.perimetro = 2*(a + b);
 	}
 	
 	public float getA() {
-		return this.a;
+		return this.lados[0];
 	}
 	
 	public float getB() {
-		return this.b;
-	}
-	
-	public float getArea() {
-		return this.area;
-	}
-	
-	public float getPerimetro() {
-		return this.perimetro;
+		return this.lados[1];
 	}
 	
 	@Override
 	public String toString() {
-		return "Tipo: Retângulo"+"\nÁrea: "+((Float)this.area).toString()
-				+"\nPerímetro: "+((Float)this.perimetro).toString();
+		return "Tipo: Retangulo"+"\nArea: "+((Float)this.area).toString()
+				+"\nPerimetro: "+((Float)this.perimetro).toString();
 	}
 }
