@@ -16,14 +16,16 @@ public class Treino {
 		GoleiroPessoa goleiro = new GoleiroPessoa(leitor.next());
 		
 		Penalty p = new Penalty(goleiro, cobrador);
-		p.addObserver(cobrador);
-		p.addObserver(goleiro);
+		p.attach(cobrador);
+		p.attach(goleiro);
 		
 		int acertosCobrador = 0;
 		int defesas = 0;
 		
 		for (int i = 0; i < 3; i++)
-			if (p.cobrar())
+			if (!p.cobrar()) // isso estava invertido, o cobrador acerta se o resultado do
+							 // .cobrar() for false, i.e., o lado do chute e do pulo do goleiro
+				 			 // sao diferentes.
 				acertosCobrador++;
 			else
 				defesas++;

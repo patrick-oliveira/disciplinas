@@ -1,9 +1,8 @@
 package jogo;
 
-import java.util.Observable;
+import Observer.Subject;
 
-@SuppressWarnings("deprecation")
-public class Penalty extends Observable {
+public class Penalty extends Subject {
 	
 	private static int contagem = 0;
 	
@@ -23,7 +22,7 @@ public class Penalty extends Observable {
 		int ladoDefesa = goleiro.defender();
 		
 		System.out.println();
-		notifyObservers(ladoChute != ladoDefesa);
+		notify(this, ladoChute != ladoDefesa);
 		return (ladoChute != ladoDefesa); // Bola entra se o goleiro pular para o lado diferente de onde a bola foi chutada
 	}
 	

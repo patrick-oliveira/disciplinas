@@ -1,12 +1,10 @@
 package jogo;
-import java.util.Observable;
-import java.util.Observer;
-import java.util.Scanner;
 
+import Observer.Ouvinte;
 import strategy.DefesaAutomatico;
 import strategy.DefesaJogador;
 
-public class GoleiroPessoa extends Jogador implements Observer {
+public class GoleiroPessoa extends Jogador implements Ouvinte {
 
 	public GoleiroPessoa(String nome) {
 		super(nome);
@@ -21,12 +19,8 @@ public class GoleiroPessoa extends Jogador implements Observer {
 	}
 
 	@Override
-	public void update(Observable o, Object arg) {
-		if(o instanceof Penalty) {
-			boolean resultado = (boolean)arg;
-			Penalty jogo = (Penalty)o;
-			System.out.println(getNome()+": recebeu notificação - Resultado do Penalty "+jogo.getContagem()+": "+(resultado?"Defendeu":"Não defendeu"));
-		}
+	public void update(Penalty jogo, boolean resultado) {
+		System.out.println(getNome()+": recebeu notificação - Resultado do Penalty "+jogo.getContagem()+": "+(resultado?"Defendeu":"Não defendeu"));
 	}
 
 }
