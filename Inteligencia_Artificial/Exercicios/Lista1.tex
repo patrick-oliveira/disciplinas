@@ -1,0 +1,129 @@
+\documentclass{article}
+\usepackage[portuguese]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath, amsthm, amssymb, amsfonts}
+\usepackage{subcaption}
+\usepackage{mathtools}
+\usepackage{graphicx}
+\usepackage{color}
+\usepackage{authblk}
+\usepackage[colorlinks,citecolor=red,urlcolor=blue,bookmarks=false,hypertexnames=true]{hyperref}
+\usepackage{geometry}
+\usepackage{float}
+\geometry{
+	a4paper,
+	total={170mm,257mm},
+	left=20mm,
+	top=20mm,
+}
+
+\newcommand{\limite}{\displaystyle\lim}
+\newcommand{\integral}{\displaystyle\int}
+\newcommand{\somatorio}{\displaystyle\sum}
+\newtheorem{teorema}{Teorema}[section]
+\newtheorem{definicao}{Definição}[section]
+\newtheorem{proposicao}{Proposição}[section]
+\newtheorem{corolario}[teorema]{Corolário}
+\newtheorem{lema}{Lema}[section]
+\newtheorem{exemplo}{Exemplo}[section]
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{definition}{Definition}[section]
+\newtheorem{collorary}[theorem]{Collorary}
+\newtheorem{lemma}{Lemma}[section]
+\newtheorem{proposition}{Propositon}[section]
+\newtheorem{example}{Example}[section]
+
+% Dados de identificação
+\title{Primeira Lista de Exercícios}
+\author{Patrick Oliveira}
+\affil{}
+
+\begin{document}
+\maketitle
+
+Inteligência Artificial
+
+\begin{enumerate}
+	\item
+		\begin{itemize}
+			\item \textbf{Inteligência:} Um conjunto de capacidades que permite a entes, com diferentes graus de complexidade, perceber o mundo e interagir com ele. Por capacidades compreende, por exemplo, a visão, a capacidade de movimentar-se e manipular objetos, localizar-se no espaço por diferentes sentidos (audição, tato), discernir objetos, identificar funções (novamente, com diferentes graus de complexidade).
+			\item \textbf{Inteligência Artificial:} Uma inteligência que surge por vias diferentes da "natural", i.e., pelo processo de evolução por seleção natural.
+			\item \textbf{Agente:} Um ente munido da tarefa de tomar decisões.
+			\item \textbf{Racionalidade:} Um processo de tomada de decisões e julgamento que possui intencionalidade, isto é, finalidade, e portanto que segue algum tipo de método (mesmo que não-ótimo) para se chegar a tal fim.
+			\item \textbf{Raciocínio lógico:} Um processo cognitivo pelo qual se faz julgamentos, relaciona conceitos e, assim, elabora e escolhe ações, seguindo o método lógico-dedutivo, i.e. deduções válidas a partir de premissas verdadeiras (ainda que assumidas como tal).
+		\end{itemize}
+	\item Seguindo a definição de racionalidade anterior, como julgamento munido de intencionalidade, uma reação não seria racional, pois é uma consequência de uma sequência de mecanismos (e.g. biológicos) causados por um estímulo, não havendo intencionalidade no ato. Pela definição anterior de inteligência, mecanismos reativos são inteligentes, dado que envolve tais capacidades de percepção e interação.
+	\item Computadores de fato fazem apenas o que seus programadores dizem a eles. Essa afirmação, por si só, não implica que computadores não podem ser inteligentes. Posso entender a primeira afirmação como: computadores apenas seguem regras determinadas previamente. Dado que os seres que entendemos como inteligentes também estão sujeitos à regras elaboradas anteriormente (mecanismos físicos, químicos, biológicos, psicológicos), a implicação nos levaria a conclusão de que não somos inteligentes, o que é um engano.
+	\item Na realidade, podemos reformular a interação entre genes e inteligência, pensando que eles tornam a inteligência possível.
+	\item Mesma ideia.
+\end{enumerate}
+
+Agentes
+
+\begin{enumerate}
+	\item 
+		\begin{itemize}
+			\item \textbf{Jogador de futebol (um goleiro, digamos):}
+				\begin{itemize}
+					\item \textbf{Performance:} Evitar gols do time adversário. O objetivo é minimizar o número de gols do time adversário.
+					\item \textbf{Ambiente:} Um campo de futebol.
+					\item \textbf{Ações:} Mover-se em uma região delimitada ao redor do gol, necessariamente menor que a região total do campo de futebol, podendo pular, agarrar a bola, chutar, arremessar a bola.
+					\item \textbf{Sensores:} Tato e visão, particularmente. Naturalmente que há todo um processo cognitivo complexo, mas o goleiro precisa identificar que alguém vai chutar para o gol e deve saber se mover a fim de parar a bola.
+					\item \textbf{Propriedades do ambiente:} O ambiente é totalmente observável, dado que o jogador consegue observar todo o campo e tudo que está acontecendo nele. É também estocástico, pois não há previsibilidade alguma sobre como os outros jogadores se comportam no campo. O ambiente é episódico, pois não precisa se preocupar com o que aconteceu anteriormente no jogo para cumprir sua função num dado instante. É dinâmico, pois o jogo segue independentemente do que o goleiro decide fazer. O ambiente é contínuo; em termos de direções que o jogador pode decidir seguir, já há continuidade. O ambiente é conhecid, presumindo que o jogador sabe como futebol funciona.
+				\end{itemize}
+			\item \textbf{Explorando os oceanos subterrâneos de Titan:}
+				\begin{itemize}
+					\item \textbf{Performance:} Percorrer e registrar (via imagens) o maior espaço possível dos oceânos subterrâneos.
+					\item \textbf{Ambiente:} Os oceânos subterrâneos.
+					\item \textbf{Ações:} Mover-se no espaço tridimensional, de maneira contínua, e tirar fotos.
+					\item \textbf{Sensores:} Uma câmera (visão) capaz de tirar fotos e fazer medições do movimento do robô (distância entre o robô e um objeto percebido).
+					\item \textbf{Propriedades do ambiente:} O ambiente é parcialmente observável. O robô consegue perceber apenas as suas imediações e, caso tenha um mecanismo de memória, também as localidades já percorridas. O ambiente é estocástico, não se sabe as consequências de um movimento; digamos, não se sabe se um caminho é ou não sem saída em função da direção que o robô decidiu percorrer. O ambiente é sequencial, dado que as localidades possíveis de serem exploradas depende do que já foi explorado anteriormente, e é estático, pois não muda em função das ações dos agentes. Como o movimento é tridimensional e contínuo, o ambiente é contínuo e, naturalmente, também desconhecido.
+				\end{itemize}
+			\item \textbf{Comprando livos usados na internet:} \textit{Isso pode ser um bom projeto, um bot que percorre sites de compra verificando promoções muito boas.}
+				\begin{itemize}
+					\item \textbf{Performance:} Aumentar a razão número de livros/dinheiro gasto.
+					\item \textbf{Ambiente:} Sites de compra de livros usados.
+					\item \textbf{Ações:} Dada uma lista prévia de sites de compra: navegar pelo site, identificar itens a venda, registrar o preço, comprar, identificar hyperlinks para outros sites, trocar de site.
+					\item \textbf{Sensores:} ??
+					\item \textbf{Propriedades do ambiente:} O ambiente é parcialmente observável, não se tem acesso a todos os sites e todas as suas páginas ao mesmo tempo. O ambiente é determinístico, ao se escolher entrar em uma página ou um site o agente sabe onde vai parar, tal como ao escolher comprar um item ou registrar um preço. O ambiente é dinâmico, pois ítens podem acabar no estoque das lojas se o agente decide não fazer nada, ou os preços podem mudar. É também discreto, o número de sites e páginas é finito. O ambiente é desconhecido, pois cada site possui suas particularidades de acesso que podem ou não se adequar aos mecanimos de acesso pré-programados no bot.
+				\end{itemize}
+			\item \textbf{Fazendo lances em um leilão:} \textit{Isso também pode ser um bom projeto.}
+		\end{itemize}
+	\item 
+
+		\begin{itemize}
+			\item \textbf{Agente:} Um ente munido de sensores para perceber o ambiente em que está, ferramentas para interagir com o ambiente e imbuído da tarefa de decidir como agir em função do que percebe, dada uma tarefa a ser realizada.
+			\item \textbf{Função de agente:} Uma abstração que mapeia um estado (ou conjunto de estados) para uma ação.
+			\item \textbf{Programa de agente:} Uma implementação (um algoritmo) que executa o comportamento do agente em um ambiente.
+			\item \textbf{Racionalidade:} É um modo de se fazer julgamentos e de tomar decisões que maximiza uma medida de performance previamente definida sobre o resultado das decisões e dos julgamentos.
+			\item \textbf{Autonomia:} É a capacidade do agente de adaptar sua estratégia de ação com base no resultado de ações anteriores e observações dos estados do ambiente.
+			\item \textbf{Agente reativo (reflexivo):} É um tipo de agente que toma decisões com base no que percebe a cada instante, ou seja, reage à estimulos do ambiente, desconsiderando eventos passados.
+			\item \textbf{Agente baseado em modelo:} É um tipo de agente que possui uma representação (modelo) do ambiente. Tal modelo consiste nos seus estados, como eles podem mudar com o tempo e devido às ações do agente, possivelmente descritos por meio de \textit{regras}. O agente possui uma memória dos estados (percepções) anteriores e atualiza o seu modelo conforme realiza ações.
+			\item \textbf{Agente baseado em objetivo:} É um tipo de agente que toma decisões tendo como referencial não apenas um modelo do ambiente mas uma especificação de estado(s) desejado(s), i.e. objetivos.
+			\item \textbf{Agente baseado em utilidade:}
+		\end{itemize}
+	\item Done.
+	\item 
+
+		\begin{itemize}
+			\item Considerando um ambiente matricial e um agente reativo sem função aleatória que desconhece as condições iniciais do ambiente, não seria possível que tal agente atuasse de forma perfeitamente racional. O agente precisaria decidir segundo um conjunto de regras previamente estabelecida tendo como base apenas o que percebe atualmente, no quadrado em que está. Caso identificasse que a sua atual posição está suja, ele limparia, caso contrário, ou ficaria parado ou se moveria em uma direção específica. Nesse caso, ele desconsideraria toda uma região desconhecida que poderia permanecer suja.
+			\item Um agente com função aleatória que, por exemplo, escolhe aleatoriamente uma direção para se mover caso a posição atual não esteja suja, teria um desempenho melhor que um agente reativo simples, pois potencialmente exploraria toda a extensão do ambiente, mas certamente uma extensão maior que o agente simples, aumentando suas chances de limpar mais quadrados.
+			\item Sim. Basta projetar um ambiente suficientemente vasto com sujeira concentrada em uma pequena área. Como o movimento do agente é aleatório, ele poderia se mover para longe da área que deveria limpar.
+			\item Sim. Um agente que mantivesse um mapa aproximado do ambiente, atualizando-o conforme se move, poderia fazer escolhas aleatórias mas desconsiderando locais já explorados.
+		\end{itemize}
+	\item 
+
+		\begin{itemize}
+			\item No primeiro caso, o correto a se fazer é não fazer nada até a rodada seguinte, em que o robô identificará o quadrado como sujo e tentará limpá-lo. No segundo caso, o correto a se fazer é corrigir o erro, então, na próxima rodada o agente identificará o quadrado como sujo e tentará limpá-lo.
+			\item O agente guardaria um mapa das localidades já percorridas. Antes de decidir para onde se mover, ele avaliaria se já esteve em um dos locais acessíveis por um movimento possível. Caso sim, não descartaria tal movimento mas colocaria pesos em cada uma das direções, priorizando aquelas que levam a regiões não percorridas. Por exemplo, pode-se escolher aleatoriamente mas as direções não exploradas possuem probabilidade maior.
+		\end{itemize}
+\end{enumerate}
+
+Busca
+
+\begin{enumerate}
+	\item 
+\end{enumerate}
+
+\end{document}
+
