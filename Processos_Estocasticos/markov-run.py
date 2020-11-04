@@ -218,28 +218,6 @@ vC  = np.array([ 0.  ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  
 
 normalize()
 
-#Instrucoes:
-#
-#Rode o script no modo interativo para ter acesso aos comandos:
-#
-#python -i markov-run.py
-#
-#no terminal mesmo se estiver usando linux, windows ou mac
-#
-#Para especificar uma matriz de transicao nova, mude a definicao de T (antes de rodar o script, ou introduzindo o novo T atraves de um comando e rodando normalize() logo em seguida). As linhas nao precisam somar 1 ('normalize' arruma isso), apenas refletir as proporcoes entre as diferentes probabilidades de transicao partindo do estado correspondente a uma dada linha
-#Se quiser mudar a condicao inicial, mude a definicao de v0 (se mudar T para ter mais do que 3 estados, lembre-se de mudar v0 para tambem ter o mesmo numero de estados)
-
-
-#graph_theory(v_0, steps) plota a evolucao teorica, partindo de v_0 como condicao inicial e usando t = 0, 1, ..., steps
-
-#make_comparison_graph(v_0, steps, num_sims) faz 'num_sims' simulacoes e plota a comparacao das probabilidades estimadas com a previsao teorica. Usa v_0 como condicao inicial e t = 0, ..., steps
-
-#graph_realizations(v_0, steps, num_sims) faz as mesmas simulacoes que a anterior, mas plota t por X(t) pra todas elas, ou seja a evolucao dos estados no tempo.
-#
-#Pro grafico dessa aqui nao ficar incompreensivel, precisa escolher uma matriz de transicao e a ordem dos indices, de forma que os estados que "atraem a trajetoria" fiquem agrupados.
-#
-#A parte que faz o grafico fica pesada (leva 1~2 minutos) por volta de umas 5000 simulacoes
-
 
 
 
