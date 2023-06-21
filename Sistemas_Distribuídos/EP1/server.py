@@ -105,7 +105,8 @@ class Server:
                 
                 c.send("JOIN_OK".encode())
             elif request_type == "UPDATE":
-                self.__register_files(addr, [request_body])
+                filename, ip, port = tuple(request_body)
+                self.__register_files((ip, port), [filename])
                 c.send("UPDATE_OK".encode())
             elif request_type == "SEARCH":
                 print(f"Peer {addr[0]}:{addr[1]} solicitou arquivo {request_body}")

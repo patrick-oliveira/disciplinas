@@ -13,28 +13,34 @@ class Peer:
     class DownloadWorker(Thread):
         def __init__(
             self,  
-            request_addr,
-            peer_addr,
-            server_addr,
+            request_ip, 
+            request_port, 
             file_name,
             folder,
+            peer_ip,
+            peer_port,
+            server_ip,
+            server_port
         ):
             super().__init__()
             
-            self.request_addr = request_addr
-            self.peer_addr = peer_addr
-            self.server_addr = server_addr
+            self.request_ip = request_ip
+            self.request_port = request_port
             self.file_name = file_name
             self.folder = folder
+            self.peer_ip = peer_ip
+            self.peer_port = peer_port
+            self.server_ip = server_ip
+            self.server_port = server_port
             
         def update(self):
             S = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            S.connect(self.server_addr)
+            S.connect((self.server_ip, self.server_port))
             
             S.send((
                 "UPDATE"+\
                 "&"+\
-                f"{self.file_name} {self.peer_addr[0]} {self.peer_addr[1]}"
+                f"{self.file_name} {self.peer_ip} {self.peer_port}"
             ).encode())
             
             while True:
@@ -43,7 +49,7 @@ class Peer:
             
         def run(self):
             S = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            S.connect(self.request_addr)
+            S.connect((self.request_ip, self.request_port))
             
             S.send(('DOWNLOAD' + '&' + self.file_name).encode())
             
