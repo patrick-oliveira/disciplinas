@@ -1,9 +1,23 @@
-import sqlite3
+import os
 import socket
 import pickle
+import json
+import logging
+import sys
+import argparse
 
 from typing import Tuple, List
-from sqlite3 import IntegrityError
+from threading import Lock, Thread
+
+lock = Lock()
+
+root = logging.getLogger()
+root.setLevel(logging.INFO)
+
+handler = logging.StreamHandler(sys.stdout)
+handler.setLevel(logging.INFO)
+handler.setFormatter(logging.Formatter('%(message)s'))
+root.addHandler(handler)
 
 class Server:
     server_ip: str
@@ -11,117 +25,113 @@ class Server:
     s: socket.socket
     db_file: str
     
+    class RequestWorker(Thread):
+        def __init__(self, conn, addr):
+            self.conn = conn
+            self.addr = addr
+        
+        def __register_files(
+            self,
+            addr: Tuple[str, int],
+            file_list: List[str]
+        ):
+            with lock:
+                with open("registry.json", "r") as f:
+                    registry = json.load(f)
+                
+                for filename in file_list:
+                    if filename in registry.keys():
+                        if addr not in registry[filename]:
+                            registry[filename].append(addr)
+                    else:
+                        registry[filename] = [addr]
+                        
+                with open("registry.json", "w") as f:
+                    json.dump(registry, f)
+                
+        def __search_file(
+            self,
+            filename: str
+        ):
+            with open("registry.json", "r") as f:
+                registry = json.load(f)
+            
+            if filename in registry.keys():
+                return registry[filename]
+            
+            else:
+                return []
+            
+        def run(self):
+            request = self.c.recv(1024).decode().split("&")
+            request_type = request[0]
+            request_body = request[1]
+            
+            if request_type == "JOIN":
+                files = request_body.split(" ")
+                self.__register_files(self.addr, files)
+                logging.info(f"Peer {self.addr[0]}:{self.addr[1]} adicionado com arquivos {request_body}")  # noqa: E501
+                self.c.send("JOIN_OK".encode())
+            elif request_type == "UPDATE":
+                filename, ip, port = tuple(request_body)
+                self.__register_files((ip, port), [filename])
+                self.c.send("UPDATE_OK".encode())
+            elif request_type == "SEARCH":
+                logging.info(f"Peer {self.addr[0]}:{self.addr[1]} solicitou arquivo {request_body}")  # noqa: E501
+                known_peers = pickle.dumps(self.__search_file(request_body))
+                self.c.sendall(known_peers)
+            
+            self.c.close()
+            
+    
     def __init__(
         self,
         server_ip: str,
         port: int,
-        db_file: str = "registry.db"
     ):
-        self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_ip = server_ip
         self.port = port
-        
-        self.db_file = db_file
+    
         self.__initialize_registry()
-        
-    def __create_db_connection(self):
-        conn = sqlite3.connect(self.db_file)
-        return conn
     
     def __initialize_registry(self):
-        conn = self.__create_db_connection()
-        
-        c = conn.cursor()
-        c.execute(
-            '''
-            CREATE TABLE IF NOT EXISTS registry (
-                file text NOT NULL,
-                ip text NOT NULL,
-                port integer NOT NULL,
-                PRIMARY KEY (file, ip, port)
-            )
-            '''
-        )
-        
-        conn.close()
-        
-    def __register_files(
-        self,
-        addr: Tuple[str, int],
-        file_list: List[str]
-    ):
-        rows = [(f, addr[0], addr[1]) for f in file_list]
-        
-        conn = self.__create_db_connection()
-        c = conn.cursor()
-        for row in rows:
-            try:
-                c.execute(
-                    """
-                    INSERT INTO registry(file, ip, port) VALUES (?, ?, ?)
-                    """,
-                    row
-                )
-                conn.commit()
-            except IntegrityError:
-                # file already inserted
-                pass
-    
-        conn.close()
-        
-    def __search_file(
-        self,
-        file_name: str
-    ):
-        conn = self.__create_db_connection()
-        c = conn.cursor()
-        c.execute(
-            '''
-            SELECT ip, port FROM registry WHERE file=\'{}\'
-            '''.format(file_name)
-        )
-        rows = c.fetchall()
-        rows = list(set(rows))
-        
-        conn.close()
-        return rows
+        if not os.path.exists("registry.json"):
+            with open("registry.json", "w") as f:
+                json.dump({}, f)
         
     def run(self):
+        self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.s.bind((self.server_ip, self.port))
         self.s.listen(5)
         
         while True:
             c, addr = self.s.accept()
-            
-            request = c.recv(1024).decode().split("&")
-            request_type = request[0]
-            request_body = request[1]
-            
-            if request_type == "JOIN":
-                print("Received join.")
-                files = request_body.split(" ")
-                if self.__register_files(addr, files):
-                    print(f"Peer {addr[0]}:{addr[1]} adicionado com arquivos {request_body}")  # noqa: E501
-                
-                c.send("JOIN_OK".encode())
-            elif request_type == "UPDATE":
-                filename, ip, port = tuple(request_body)
-                self.__register_files((ip, port), [filename])
-                c.send("UPDATE_OK".encode())
-            elif request_type == "SEARCH":
-                print(f"Peer {addr[0]}:{addr[1]} solicitou arquivo {request_body}")
-                
-                known_peers = self.__search_file(request_body)
-                known_peers = pickle.dumps(known_peers)
-                c.sendall(known_peers)
-            
-            c.close()
-            
+            self.RequestWorker(c, addr).start()
             
             
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--ip',
+        '-i',
+        action = 'store',
+        type = str,
+        default = '127.0.0.1',
+        dest = 'ip'
+    )
+    parser.add_argument(
+        '--port',
+        '-p',
+        action = 'store',
+        type = int,
+        default = 1099,
+        dest = 'port'
+    )
+    
+    args = parser.parse_args()
+    
     server = Server(
-        server_ip = '127.0.0.1',
-        port = 1099
+        server_ip = args.ip,
+        port = args.port
     )
     server.run()
