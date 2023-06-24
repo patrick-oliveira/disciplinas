@@ -4,7 +4,6 @@ import pickle
 
 from threading import Thread, Event
 
-from time import sleep
 
 class Peer:
     server_IP = '127.0.0.1'
@@ -128,8 +127,9 @@ class Peer:
         
         self.files = os.listdir(folder)
         self.last_search = None
+        self.request_worker = None
         
-        self.__wait_for_requests()
+        self.join(ip, port, folder)
        
     def __set_addr(self, ip: str, port: int, folder: str):
         self.addr = (ip, port)
@@ -202,7 +202,8 @@ class Peer:
         self.request_worker.start()
         
     def __terminate_worker(self):
-        self.request_worker.stop()
+        if self.__terminate_worker is not None:
+            self.request_worker.stop()
 
         
 if __name__ == "__main__":

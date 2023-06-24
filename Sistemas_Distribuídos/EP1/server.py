@@ -54,20 +54,20 @@ class Server:
         
         conn = self.__create_db_connection()
         c = conn.cursor()
-        try:
-            c.executemany(
-                """
-                INSERT INTO registry(file, ip, port) VALUES (?, ?, ?)
-                """,
-                rows
-            )
-            conn.commit()
-            
-            return True
-        except IntegrityError:
-            return False
-        finally:
-            conn.close()
+        for row in rows:
+            try:
+                c.execute(
+                    """
+                    INSERT INTO registry(file, ip, port) VALUES (?, ?, ?)
+                    """,
+                    row
+                )
+                conn.commit()
+            except IntegrityError:
+                # file already inserted
+                pass
+    
+        conn.close()
         
     def __search_file(
         self,
