@@ -1,27 +1,38 @@
 import socket
 import os
 import pickle
+import argparse
+import logging
+import sys
 
+from pathlib import Path
+from typing import Tuple
 from threading import Thread, Event
 
+root = logging.getLogger()
+root.setLevel(logging.INFO)
+
+handler = logging.StreamHandler(sys.stdout)
+handler.setLevel(logging.INFO)
+handler.setFormatter(logging.Formatter('%(message)s'))
+root.addHandler(handler)
+
+UPLOAD_BUFFER_SIZE = 1000000
 
 class Peer:
-    server_IP = '127.0.0.1'
-    server_port = 1099
-    
     class DownloadWorker(Thread):
         def __init__(
             self,  
-            request_addr,
-            peer_addr,
-            server_addr,
-            file_name,
-            folder,
+            request_addr: Tuple[str, int],
+            file_name: str,
+            folder: str,
+            self_addr: Tuple[str, int],
+            server_addr: Tuple[str, int]
         ):
             super().__init__()
             
             self.request_addr = request_addr
-            self.peer_addr = peer_addr
+            self.self_addr = self_addr
             self.server_addr = server_addr
             self.file_name = file_name
             self.folder = folder
@@ -30,34 +41,37 @@ class Peer:
             S = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             S.connect(self.server_addr)
             
-            S.send((
-                "UPDATE"+\
-                "&"+\
-                f"{self.file_name} {self.peer_addr[0]} {self.peer_addr[1]}"
-            ).encode())
+            S.send(f"UPDATE/{self.self_addr[0]} {self.self_addr[1]} {self.file_name}".encode())  # noqa: E501
             
             while True:
                 if S.recv(1024).decode == "UPDATE_OK":
                     break
             
         def run(self):
+            if self.request_addr == self.self_addr:
+                return
+            
             S = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            S.connect(self.request_addr)
             
-            S.send(('DOWNLOAD' + '&' + self.file_name).encode())
+            try:
+                S.connect(self.request_addr)
+            except ConnectionRefusedError:
+                return
             
-            with open(f"{self.folder}/{self.file_name}", "wb") as f:
-                while True:
-                    data = S.recv(1024).decode()
-                    
-                    if not data:
-                        break
-                    else:
-                        f.write(data)
-            print(f"Arquivo {self.file_name} baixado com sucesso na pasta "\
-                  f"{self.folder}")
+            S.send(f'DOWNLOAD/{self.file_name}'.encode())
+            if S.recv(1024).decode() == "AVAILABLE":
+                with open(Path(self.folder) / self.file_name, "wb") as f:
+                    while True:
+                        data = S.recv(UPLOAD_BUFFER_SIZE)
+                        
+                        if not data:
+                            break
+                        else:
+                            f.write(data)
+                            
+                logging.info(f"Arquivo {self.file_name} baixado com sucesso na pasta {self.folder}") # noqa: E501
             
-            self.update()
+                self.update()
             
     class RequestWorker(Thread):
         def __init__(
@@ -77,10 +91,12 @@ class Peer:
             self.__stop_event.set()
             
         def upload(self, conn, file_path: str):
-            print(f"uploading {file_path}")
+            size = os.path.getsize(file_path)
             with open(file_path, "rb") as f:
-                conn.sendall(f.read())
-            
+                while size > 0:
+                    conn.sendall(f.read(UPLOAD_BUFFER_SIZE))
+                    size -= UPLOAD_BUFFER_SIZE
+                    
             conn.close()
              
         def run(self):
@@ -90,18 +106,15 @@ class Peer:
             S.bind(self.peer_addr)
             S.listen(1)
             
-            print("Request worker is listening.")
             while True:
                 if self.__stop_event.is_set():
                     break
                 
                 c, addr = S.accept()
-                    
-                request = c.recv(1024).decode().split("&")
+                
+                request = c.recv(1024).decode().split("/")
                 request_type = request[0]
                 request_body = request[1]
-                
-                print("Recebeu conexão de ", addr)
                 
                 if request_type == "DOWNLOAD":
                     if request_body in self.files:
@@ -113,49 +126,50 @@ class Peer:
                     else:
                         c.send("UNAVAILABLE".encode())
                         c.close()
-                        
-            print("Finishing")
                 
             
     def __init__(
         self,
-        ip: str,
-        port: int,
-        folder: str 
+        addr: Tuple[str, int],
+        folder: str,
+        server_addr: Tuple[str, int] = ('127.0.0.1', 1099)
     ):
-        self.__set_addr(ip, port, folder)
+        self.__set_peer_addr(addr, folder)
+        self.__set_server_addr(server_addr)
         
-        self.files = os.listdir(folder)
         self.last_search = None
         self.request_worker = None
         
-        self.join(ip, port, folder)
+        self.join(addr, folder)
        
-    def __set_addr(self, ip: str, port: int, folder: str):
-        self.addr = (ip, port)
+    def __set_peer_addr(self, addr: Tuple[str, int], folder: str):
+        self.addr = addr
         self.folder = folder
+        self.files = os.listdir(folder)
+    
+    def __set_server_addr(self, addr: Tuple[str, int]):
+        self.server_addr = addr
         
     def join(
         self,
-        ip,
-        port,
-        folder,
+        addr: Tuple[str, int],
+        folder: str,
     ):
         self.__terminate_worker()
         
-        self.__set_addr(ip, port, folder)
+        self.__set_peer_addr(addr, folder)
         
         S = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         S.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         S.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
         S.bind(self.addr)
         
-        S.connect((self.server_IP, self.server_port))
-        files = " ".join(self.files)
-        S.send(("JOIN" + "&" + files).encode())
+        S.connect(self.server_addr)
+        files = "/".join(self.files)
+        S.send(f"JOIN/{files}".encode())
         while True:
             if S.recv(1024).decode() == "JOIN_OK":
-                print("Sou peer {}:{} com arquivos {}".format(
+                logging.info("Sou peer {}:{} com arquivos {}".format(
                     self.addr[0], 
                     self.addr[1],
                     files
@@ -166,31 +180,26 @@ class Peer:
         
     def search(self,file_name: str):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as S:
-            S.connect((self.server_IP, self.server_port))
-            S.send(("SEARCH" + "&" + file_name).encode())
+            S.connect(self.server_addr)
+            S.send(f"SEARCH/{file_name}".encode())
 
-            known_peers = pickle.loads(S.recv(1024))
+            response = S.recv(1024)
+            known_peers = pickle.loads(response)
+                
             print("peers com arquivo solicitado: {}".format(
                 ' '.join(f"{ip}:{p}" for ip, p in known_peers)
             ))
             
             self.last_search = file_name
         
-    def download(
-        self,
-        ip: str,
-        port: int
-    ):
+    def download(self, addr: Tuple[str, int]):        
         if self.last_search is not None:
             self.DownloadWorker(
-                request_ip = ip,
-                request_port = port,
+                request_addr = addr,
                 file_name = self.last_search,
                 folder = self.folder,
-                peer_ip = self.ip,
-                peer_port = self.port,
-                server_ip = self.server_IP,
-                server_port = self.server_port
+                self_addr = self.addr,
+                server_addr = self.server_addr
             ).start()
         
     def __wait_for_requests(self):
@@ -202,42 +211,56 @@ class Peer:
         self.request_worker.start()
         
     def __terminate_worker(self):
-        if self.__terminate_worker is not None:
+        if self.request_worker is not None:
             self.request_worker.stop()
 
         
 if __name__ == "__main__":
-    ip, port, folder = tuple(input().split(" "))
-    
-    peer = Peer(
-        ip = ip,
-        port = int(port),
-        folder = folder
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--ip',
+        '-i',
+        action = 'store',
+        type = str,
+        dest = 'ip',
+        required = True
+    )
+    parser.add_argument(
+        '--port',
+        '-p',
+        action = 'store',
+        type = int,
+        dest = 'port',
+        required = True
+    )
+    parser.add_argument(
+        '--folder',
+        '-f',
+        action = 'store',
+        type = str,
+        dest = 'folder',
+        required = True
     )
     
-    print(
-        "1 - JOIN \n"\
-        "2 - SEARCH \n"\
-        "3 - DOWNLOAD \n"
+    args = parser.parse_args()
+    
+    peer = Peer(
+        addr = (args.ip, args.port),
+        folder = args.folder
     )
     
     while True:
-        try:
-            opt = input()
-            opt = opt.split(" ")
-            opt, params = opt[0], opt[1:]
-            if opt == "1":
-                ip, port, folder = tuple(params)
-                peer.join(ip, int(port), folder)
-            elif opt == "2":
-                file_name = params[0]
-                peer.search(file_name)
-            elif opt == "3":
-                ip, port, file_name = tuple(params)
-                peer.download(
-                    ip,
-                    int(port),
-                    file_name
-                )
-        except Exception as e:
-            raise e
+        print("Menu: 1 - JOIN; 2 - SEARCH; 3 - DOWNLOAD")
+        opt = input()
+        opt = opt.split(" ")
+        opt, params = opt[0], opt[1:]
+        if opt == "1":
+            ip, port, folder = tuple(params)
+            peer.join((ip, int(port)), folder)
+        elif opt == "2":
+            file_name = " ".join(params)
+            peer.search(file_name)
+        elif opt == "3":
+            ip = params[0]
+            port = params[1]
+            peer.download((ip,int(port)))
