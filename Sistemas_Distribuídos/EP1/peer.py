@@ -41,7 +41,7 @@ class Peer:
             S = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             S.connect(self.server_addr)
             
-            S.send(f"UPDATE/{self.self_addr[0]} {self.self_addr[1]} {self.file_name}".encode())  # noqa: E501
+            S.send(f"UPDATE/{self.self_addr[0]}/{self.self_addr[1]}/{self.file_name}".encode())  # noqa: E501
             
             while True:
                 if S.recv(1024).decode == "UPDATE_OK":
@@ -158,13 +158,12 @@ class Peer:
         self.__terminate_worker()
         
         self.__set_peer_addr(addr, folder)
-        
         S = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         S.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         S.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
         S.bind(self.addr)
-        
         S.connect(self.server_addr)
+        
         files = "/".join(self.files)
         S.send(f"JOIN/{files}".encode())
         while True:
@@ -186,7 +185,7 @@ class Peer:
             response = S.recv(1024)
             known_peers = pickle.loads(response)
                 
-            print("peers com arquivo solicitado: {}".format(
+            logging.info("peers com arquivo solicitado: {}".format(
                 ' '.join(f"{ip}:{p}" for ip, p in known_peers)
             ))
             
@@ -241,19 +240,41 @@ if __name__ == "__main__":
         dest = 'folder',
         required = True
     )
+    parser.add_argument(
+        '--server_ip',
+        '-si',
+        action = 'store',
+        type = str,
+        dest = 'server_ip',
+        default = '127.0.0.1',
+    )
+    parser.add_argument(
+        '--server_port',
+        '-sp',
+        action = 'store',
+        type = int,
+        dest = 'server_port',
+        default = 1099
+    )
     
     args = parser.parse_args()
     
     peer = Peer(
         addr = (args.ip, args.port),
-        folder = args.folder
+        folder = args.folder,
+        server_addr = (args.server_ip, args.server_port)
     )
     
     while True:
         print("Menu: 1 - JOIN; 2 - SEARCH; 3 - DOWNLOAD")
-        opt = input()
-        opt = opt.split(" ")
-        opt, params = opt[0], opt[1:]
+        
+        try:
+            opt = input()
+            opt = opt.split(" ")
+            opt, params = opt[0], opt[1:]
+        except IndexError:
+            continue
+        
         if opt == "1":
             ip, port, folder = tuple(params)
             peer.join((ip, int(port)), folder)
@@ -261,6 +282,10 @@ if __name__ == "__main__":
             file_name = " ".join(params)
             peer.search(file_name)
         elif opt == "3":
-            ip = params[0]
-            port = params[1]
+            try:
+                ip = params[0]
+                port = params[1]
+            except IndexError:
+                continue
+            
             peer.download((ip,int(port)))

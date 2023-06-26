@@ -20,12 +20,10 @@ handler.setFormatter(logging.Formatter('%(message)s'))
 root.addHandler(handler)
 
 class Server:
-    server_ip: str
-    port: int
-    s: socket.socket
-    db_file: str
-    
     class RequestWorker(Thread):
+        '''
+        Classe auxiliar para recebimento de requisições de peers.
+        '''
         def __init__(self, conn, addr):
             super().__init__()
             self.conn = conn
@@ -57,10 +55,9 @@ class Server:
             with open("registry.json", "r") as f:
                 registry = json.load(f)
             
-            if filename in registry.keys():
+            try:
                 return registry[filename]
-            
-            else:
+            except KeyError:
                 return []
             
         def run(self):
@@ -73,15 +70,11 @@ class Server:
                 logging.info(f"Peer {self.addr[0]}:{self.addr[1]} adicionado com arquivos {' '.join(request_body)}")  # noqa: E501
                 self.conn.send("JOIN_OK".encode())
             elif request_type == "UPDATE":
-                request_body = request_body[0].split(" ")
-                ip = request_body[0]
-                port = int(request_body[1])
-                filename = " ".join(request_body[2:])
-                print(ip, port, filename)
+                ip, port, filename = tuple(request_body)
                 self.__register_files((ip, port), [filename])
                 self.conn.send("UPDATE_OK".encode())
             elif request_type == "SEARCH":
-                request_body = request_body[0]
+                request_body = request_body.pop()
                 logging.info(f"Peer {self.addr[0]}:{self.addr[1]} solicitou arquivo {request_body}")  # noqa: E501
                 known_peers = pickle.dumps(self.__search_file(request_body))
                 self.conn.sendall(known_peers)
