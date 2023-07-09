@@ -1,8 +1,19 @@
+from typing import Union
+
 class Message:
     type: str
-    key: str
-    value: object
-    timestamp: str
+    key: Union[str, None]
+    value: Union[object, None]
+    timestamp: Union[str, None]
     
-    def __init__(self):
-        pass
+    def __init__(
+        self,
+        type: str,
+        key: str = None,
+        value: str = None,
+        timestamp: str = None
+    ):
+        self.type = type
+        self.key = key
+        self.value = value
+        self.timestamp = timestamp
