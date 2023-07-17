@@ -2,6 +2,7 @@ import socket
 import logging
 import argparse
 import sys
+import json
 
 from message import Message
 from random import sample, randint
@@ -51,12 +52,13 @@ class Client:
                     key = self.key,
                     value = self.value
                 )
+                package = json.dumps(package.__dict__)
                 
-                # send package
+                s.send(package.encode())
                 
                 while True:
                     response: Message = s.recv(1024)
-                    if response.type == "PUT_OK":
+                    if response.request_type == "PUT_OK":
                         self.__update_timestamp(self.key, response.timestamp)
                         break
                         
@@ -67,8 +69,8 @@ class Client:
                     key = self.key,
                     timestamp = self.__get_timestamp(self.key)
                 )
-                
-                # send package
+                package = json.dumps(package.__dict__)
+                s.send(package.encode())
                 
                 response: Message = s.recv(1024)
                 
