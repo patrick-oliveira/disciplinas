@@ -10,7 +10,8 @@ from message import Message
 from threading import (Lock,
                        Thread)
 from typing import (NewType,
-                    Tuple)
+                    Tuple,
+                    Union)
 
 Socket = NewType("Socket", socket.socket)
 Address = NewType("Address", Tuple[str, int])
@@ -56,13 +57,14 @@ class Server:
             request = Message(**request)
             return request
         
-        def __put_key(self, key: str, value: str) -> str:
+        def __put_key(self, key: str, value: str, timestamp: str = None) -> str:
             with lock:
                 table_path = f"{str(self.self_addr.replace('.', '_'))}.json"
                 with open(table_path, "r") as f:
                     table = json.load(f)
                 
-                timestamp = datetime.now()
+                if timestamp is None:
+                    timestamp = datetime.now()
                 
                 table[key] = (value, timestamp)
                 
@@ -70,6 +72,42 @@ class Server:
                     json.dump(table, f)
                     
             return timestamp
+        
+        def __get_key(
+            self, 
+            key: str, 
+            timestamp: Union[str, None]
+        ) -> Union[None, str, Tuple[str, str]]:
+            with lock:
+                table_path = f"{str(self.self_addr.replace('.', '_'))}.json"
+                with open(table_path, "r") as f:
+                    table = json.load(f)
+                    
+                if key not in table.keys():
+                    response = None
+                else:
+                    value, saved_timestamp = table[key]
+                    
+                    saved_timestamp = datetime.fromisoformat(
+                        saved_timestamp, 
+                        "%Y-%m-%d %H:%M:%S.%f"
+                    )
+                    
+                    if timestamp is not None:
+                        timestamp = datetime.strptime(
+                            timestamp, 
+                            "%Y-%m-%d %H:%M:%S.%f"
+                        )
+                        
+                        if saved_timestamp >= timestamp:
+                            response = (value, str(saved_timestamp))
+                        else:
+                            response = "TRY_OTHER_SERVER_OR_LATER"
+                    else:
+                        response = (value, str(saved_timestamp))
+                        
+            return response
+                    
                     
         def __replicate(
             self, 
@@ -106,6 +144,13 @@ class Server:
                 if self.is_leader:
                     timestamp = self.__put_key(request.key, request.value)
                     
+                    logging.info("Cliente {}:{} PUT key:{} value:{}".format(
+                        self.client_addr[0],
+                        self.client_addr[1],
+                        request.key,
+                        request.value
+                    ))
+                    
                     for addr in [x for x in SERVER_ADDRESS if x != self.self_addr]:
                         self.__replicate(
                             request.key, 
@@ -114,38 +159,73 @@ class Server:
                             addr
                         )
                         
-                    package = Message(
-                        request_type = "PUT_OK",
-                        timestamp = timestamp
+                    self.client_conn.send(
+                        json.dumps(Message(
+                            request_type = "PUT_OK",
+                            timestamp = timestamp
+                        ).__dict__)
                     )
                     
-                    
-                    
-                    logging.info("Cliente {}:{} PUT key:{} value:{}".format(
-                        self.client_addr[0],
-                        self.client_addr[1],
-                        request.key,
-                        request.value
-                    ))
+                    logging.info(
+                        "Enviando PUT_OK ao Cliente {}:{} da key:{} ts:{}".format(
+                            self.client_addr[0],
+                            self.client_addr[1],
+                            request.key,
+                            timestamp
+                        )
+                    )
                 else:
+                    S = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    S.connect(self.leader_addr)
+                    S.send(json.dumps(request.__dict__))
+                    
                     logging.info("Encaminhando PUT key:{} value:{}".format(
                         request.key,
                         request.value
                     ))
             elif request.request_type == "REPLICATION":
+                timestamp = self.__put_key(
+                    key = request.key,
+                    value = request.value,
+                    timestamp = request.timestamp
+                )
+                
+                self.client_conn.send(
+                    json.dumps(Message(
+                        request_type = "REPLICATION_OK"
+                    ))
+                )
+                
                 logging.info("REPLCIATION key:{} value:{} ts:{}".format(
                     request.key,
                     request.value,
                     request.timestamp
                 ))
-            elif request.request_type == "REPLICATION_OK":
-                logging.info("Enviando PUT_OK ao Cliente {}:{} da key:{} ts:{}".format(
-                    self.client_addr[0],
-                    self.client_addr[1],
-                    request.key,
-                    request.timestamp
-                ))
             elif request.request_type == "GET":
+                response = self.__get_key(request.key, request.timestamp)
+                
+                if response is None:
+                    package = json.dumps(Message(
+                        request_type = "ERROR",
+                        key = request.key,
+                        value = "EMPTY"
+                    ).__dict__)
+                elif type(response) == str:
+                    package = json.dumps(Message(
+                        request_type = "ERROR",
+                        key = request.key,
+                        value = response
+                    ))
+                else:
+                    package = json.dumps(Message(
+                        request_type = "GET_OK",
+                        key = request.key,
+                        value = response[0],
+                        timestamp = response[1]
+                    ))
+                
+                self.client_conn.send(package)
+                
                 logging.info("Cliente {}:{} GET key:{} ts:{}. ""Meu ts é {}, portanto devolvendo {}.".format(  # noqa: E501
                     self.addr[0],
                     self.addr[1],
