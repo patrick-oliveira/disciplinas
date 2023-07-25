@@ -13,8 +13,6 @@ from typing import (Tuple,
                     List,
                     Union)
 
-BUFFER = 4096
-
 lock = Lock()
 
 Socket = NewType("Socket", socket.socket)
@@ -47,6 +45,18 @@ class Client:
             self.value = value
             
             self.pattern = re.compile(r'{.*?}')
+            
+        def __get_request(self, conn: socket) -> Message:
+            """
+            Recupera e decodifica a mensagem serializada enviada pela conexão e
+            instancia um tipo Mensagem com as informações.
+
+            Returns:
+                Message: Mensagem decodificada.
+            """
+            request = conn.recv(1024)
+            message = self.__deserialize(request)
+            return message
 
         def __serialize(self, m: Message) -> bytes:
             m = m.__dict__
@@ -57,8 +67,8 @@ class Client:
         def __deserialize(self, r: bytes) -> Message:
             r = r.decode()
             r = json.loads(r)
-            m = Message(**r)
-            return m
+            r = Message(**r)
+            return r
         
         def __get_timestamp(self, key: str) -> Union[str, None]:
             with lock:
@@ -90,7 +100,7 @@ class Client:
                 )
                 
                 while True:
-                    response: Message = self.__deserialize(s.recv(BUFFER))
+                    response: Message = self.__get_request(s)
                     if response.request_type == "PUT_OK":
                         self.__update_timestamp(self.key, response.timestamp)
                         logging.info(
@@ -101,7 +111,8 @@ class Client:
                                 self.server_addr[0],
                                 self.server_addr[1]
                             )
-                        )      
+                        )  
+                        break    
 
             elif self.request_type == "GET":
                 s.send(
@@ -112,7 +123,7 @@ class Client:
                     ))
                 )
                 
-                response: Message = self.__deserialize(s.recv(BUFFER))
+                response: Message = self.__get_request(s)
                 
                 if response.request_type != "ERROR":
                     logging.info(
@@ -155,8 +166,7 @@ class Client:
         ).start()
 
     def __select_server(self) -> Address:
-        # return sample(self.server_address, 1)
-        return ('127.0.0.1', 10097)
+        return sample(self.server_address, 1).pop()
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -173,7 +183,7 @@ if __name__ == "__main__":
     client = None
     
     while True:
-        print("Menu: 0 - INIT; 1 - PUT; 2 - GET; 3 - PRINT KEYS")
+        print("Menu: 0 - INIT; 1 - PUT; 2 - GET")
         
         try:
             opt = input()
@@ -201,6 +211,3 @@ if __name__ == "__main__":
             if client is not None:
                 key = params.pop()
                 client.get(key)
-                
-        elif opt == '3':
-            print(KEYS)

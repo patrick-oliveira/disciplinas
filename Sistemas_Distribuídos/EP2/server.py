@@ -2,8 +2,8 @@ import socket
 import logging
 import sys
 import argparse
-import json
 import os
+import json
 
 from time import time, sleep
 from message import Message
@@ -12,8 +12,6 @@ from threading import (Lock,
 from typing import (NewType,
                     Tuple,
                     Union)
-
-BUFFER = 4096
 
 Socket = NewType("Socket", socket.socket)
 Address = NewType("Address", Tuple[str, int])
@@ -62,10 +60,10 @@ class Server:
         def __deserialize(self, r: bytes) -> Message:
             r = r.decode()
             r = json.loads(r)
-            m = Message(**r)
-            return m
+            r = Message(**r)
+            return r
             
-        def __get_request(self) -> Message:
+        def __get_request(self, conn: socket) -> Message:
             """
             Recupera e decodifica a mensagem serializada enviada pela conexão e
             instancia um tipo Mensagem com as informações.
@@ -73,7 +71,8 @@ class Server:
             Returns:
                 Message: Mensagem decodificada.
             """
-            message = self.__deserialize(self.client_conn.recv(BUFFER))
+            request = conn.recv(1024)
+            message = self.__deserialize(request)
             return message
         
         def __put_key(self, key: str, value: str, timestamp: str = None) -> str:
@@ -98,7 +97,7 @@ class Server:
             timestamp: Union[float, None]
         ) -> Union[None, str, Tuple[str, float]]:
             with lock:
-                table_path = f"{str(self.self_addr.replace('.', '_'))}.json"
+                table_path = f"{str(self.self_addr).replace('.', '_')}.json"
                 with open(table_path, "r") as f:
                     table = json.load(f)
                     
@@ -136,7 +135,7 @@ class Server:
             )
             
             while True:
-                response: Message = self.__deserialize(S.recv(BUFFER))
+                response: Message = self.__get_request(S)
                 if response.request_type == "REPLICATION_OK":
                     break
             
@@ -148,7 +147,7 @@ class Server:
             return 0
             
         def run(self):
-            request = self.__get_request()
+            request = self.__get_request(self.client_conn)
             
             if request.request_type == "PUT":
                 if self.is_leader:
@@ -169,7 +168,7 @@ class Server:
                             timestamp, 
                             addr
                         )
-                    
+
                     self.client_conn.send(
                         self.__serialize(Message(
                             request_type = "PUT_OK",
@@ -191,14 +190,19 @@ class Server:
                 else:
                     S = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                     S.connect(self.leader_addr)
-                    S.send(self.__serialize(request))
+                    S.sendall(self.__serialize(request))
                     
                     logging.info("Encaminhando PUT key:{} value:{}".format(
                         request.key,
                         request.value
                     ))
                     
+                    response = self.__get_request(S)
+                    
+                    self.client_conn.sendall(self.__serialize(response))
+                    
                     S.close()
+                    
             elif request.request_type == "REPLICATION":
                 timestamp = self.__put_key(
                     key = request.key,
@@ -206,7 +210,7 @@ class Server:
                     timestamp = request.timestamp
                 )
                 
-                self.client_conn.send(
+                self.client_conn.sendall(
                     self.__serialize(Message(
                         request_type = "REPLICATION_OK"
                     ))
@@ -226,12 +230,16 @@ class Server:
                         key = request.key,
                         value = "EMPTY"
                     )
+                    value = None
+                    timestamp = None
                 elif type(response) == str:
                     package = Message(
                         request_type = "ERROR",
                         key = request.key,
                         value = response
                     )
+                    value = response
+                    timestamp = None
                 else:
                     package = Message(
                         request_type = "GET_OK",
@@ -239,16 +247,18 @@ class Server:
                         value = response[0],
                         timestamp = response[1]
                     )
+                    value = response[0]
+                    timestamp = response[1]
                 
-                self.client_conn.send(self.__serialize(package))
+                self.client_conn.sendall(self.__serialize(package))
                 
                 logging.info("Cliente {}:{} GET key:{} ts:{}. ""Meu ts é {}, portanto devolvendo {}.".format(  # noqa: E501
-                    self.addr[0],
-                    self.addr[1],
+                    self.client_addr[0],
+                    self.client_addr[1],
                     request.key,
                     request.timestamp,
-                    "EDITAR",
-                    "EDITAR"
+                    timestamp,
+                    value
                 ))
                 
             self.client_conn.close()
