@@ -168,8 +168,11 @@ class Server:
                             timestamp, 
                             addr
                         )
+                        
+                    S = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    S.connect(tuple(request.addr))
 
-                    self.client_conn.send(
+                    S.send(
                         self.__serialize(Message(
                             request_type = "PUT_OK",
                             key = request.key,
@@ -187,6 +190,8 @@ class Server:
                         )
                     )
                     
+                    S.close()
+                    
                 else:
                     S = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                     S.connect(self.leader_addr)
@@ -196,10 +201,6 @@ class Server:
                         request.key,
                         request.value
                     ))
-                    
-                    response = self.__get_request(S)
-                    
-                    self.client_conn.sendall(self.__serialize(response))
                     
                     S.close()
                     

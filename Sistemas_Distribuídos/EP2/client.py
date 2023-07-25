@@ -86,33 +86,52 @@ class Client:
                 global KEYS
                 KEYS[key] = timestamp
                 
-        
+        def __wait_put_ok(self):
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.listen(1)
+            def wait_thread(s: Socket):
+                conn, addr = s.accept()
+                while True:
+                        response: Message = self.__get_request(conn)
+                        if response.request_type == "PUT_OK":
+                            self.__update_timestamp(self.key, response.timestamp)
+                            logging.info(
+                                "PUT_OK key: {} value {} timestamp {} realizada no servidor {}:{}".format(  # noqa: E501
+                                    self.key,
+                                    self.value,
+                                    response.timestamp,
+                                    self.server_addr[0],
+                                    self.server_addr[1]
+                                )
+                            )
+                            conn.close()  
+                            break    
+            
+            t1 = Thread(target = wait_thread, args = (s, ))
+            t1.start()
+            
+            return t1, s.getsockname()
+                    
         def run(self):
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.connect(self.server_addr)
+            
             if self.request_type == "PUT":
+                wait_thread, wait_addr = self.__wait_put_ok()
+                
                 s.send(
                     self.__serialize(Message(
                         request_type = "PUT",
+                        addr = wait_addr,
                         key = self.key,
                         value = self.value
                     ))
                 )
                 
-                while True:
-                    response: Message = self.__get_request(s)
-                    if response.request_type == "PUT_OK":
-                        self.__update_timestamp(self.key, response.timestamp)
-                        logging.info(
-                            "PUT_OK key: {} value {} timestamp {} realizada no servidor {}:{}".format(  # noqa: E501
-                                self.key,
-                                self.value,
-                                response.timestamp,
-                                self.server_addr[0],
-                                self.server_addr[1]
-                            )
-                        )  
-                        break    
+                s.close()
+                
+                wait_thread.join()
+                
 
             elif self.request_type == "GET":
                 s.send(
@@ -137,7 +156,7 @@ class Client:
                         )
                     )
 
-            s.close()
+                s.close()
             
     def __init__(
         self,
