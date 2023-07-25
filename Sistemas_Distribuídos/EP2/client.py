@@ -5,6 +5,7 @@ import sys
 import json
 import re
 
+from time import sleep
 from message import Message
 from random import sample, randint
 from threading import Thread, Lock
@@ -145,16 +146,21 @@ class Client:
                 response: Message = self.__get_request(s)
                 
                 if response.request_type != "ERROR":
+                    self.__update_timestamp(self.key, response.timestamp)
+                    
                     logging.info(
                         "GET key: {} value {} obtido do servidor {}:{}, meu timestamp {} e do servidor {}".format(  # noqa: E501
                             self.key,
                             response.value,
                             self.server_addr[0],
                             self.server_addr[1],
-                            self.__get_timestamp(key),
+                            self.__get_timestamp(self.key),
                             response.timestamp
                         )
                     )
+                else:
+                    print(response.value, response.request_type)
+                    
 
                 s.close()
             
@@ -230,3 +236,8 @@ if __name__ == "__main__":
             if client is not None:
                 key = params.pop()
                 client.get(key)
+                
+        elif opt == '99':
+            while True:
+                client.get("0")
+                sleep(0.5)

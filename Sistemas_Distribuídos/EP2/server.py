@@ -110,7 +110,7 @@ class Server:
                         if saved_timestamp >= timestamp:
                             response = (value, saved_timestamp)
                         else:
-                            response = "TRY_OTHER_SERVER_OR_LATER"
+                            response = ("TRY_OTHER_SERVER_OR_LATER", saved_timestamp)
                     else:
                         response = (value, saved_timestamp)
                         
@@ -144,7 +144,7 @@ class Server:
             return True
         
         def __simulate_delay(self) -> int:
-            return 0
+            return 5
             
         def run(self):
             request = self.__get_request(self.client_conn)
@@ -233,14 +233,14 @@ class Server:
                     )
                     value = None
                     timestamp = None
-                elif type(response) == str:
+                elif response[0] == "TRY_OTHER_SERVER_OR_LATER":
                     package = Message(
                         request_type = "ERROR",
                         key = request.key,
-                        value = response
+                        value = response[0]
                     )
-                    value = response
-                    timestamp = None
+                    value = response[0]
+                    timestamp = response[1]
                 else:
                     package = Message(
                         request_type = "GET_OK",
