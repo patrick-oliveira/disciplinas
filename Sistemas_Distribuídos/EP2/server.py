@@ -5,13 +5,15 @@ import argparse
 import json
 import os
 
-from datetime import datetime
+from time import time, sleep
 from message import Message
 from threading import (Lock,
                        Thread)
 from typing import (NewType,
                     Tuple,
                     Union)
+
+BUFFER = 4096
 
 Socket = NewType("Socket", socket.socket)
 Address = NewType("Address", Tuple[str, int])
@@ -50,21 +52,38 @@ class Server:
             self.client_conn = client_conn
             self.client_addr = client_addr
             self.is_leader = is_leader
+        
+        def __serialize(self, m: Message) -> bytes:
+            m = m.__dict__
+            m = json.dumps(m)
+            m = m.encode()
+            return m
+                    
+        def __deserialize(self, r: bytes) -> Message:
+            r = r.decode()
+            r = json.loads(r)
+            m = Message(**r)
+            return m
             
         def __get_request(self) -> Message:
-            request = self.client_conn.recv(1024).decode()
-            request = json.loads(request)
-            request = Message(**request)
-            return request
+            """
+            Recupera e decodifica a mensagem serializada enviada pela conexão e
+            instancia um tipo Mensagem com as informações.
+
+            Returns:
+                Message: Mensagem decodificada.
+            """
+            message = self.__deserialize(self.client_conn.recv(BUFFER))
+            return message
         
         def __put_key(self, key: str, value: str, timestamp: str = None) -> str:
             with lock:
-                table_path = f"{str(self.self_addr.replace('.', '_'))}.json"
+                table_path = f"{str(self.self_addr).replace('.', '_')}.json"
                 with open(table_path, "r") as f:
                     table = json.load(f)
                 
                 if timestamp is None:
-                    timestamp = datetime.now()
+                    timestamp = time()
                 
                 table[key] = (value, timestamp)
                 
@@ -76,8 +95,8 @@ class Server:
         def __get_key(
             self, 
             key: str, 
-            timestamp: Union[str, None]
-        ) -> Union[None, str, Tuple[str, str]]:
+            timestamp: Union[float, None]
+        ) -> Union[None, str, Tuple[str, float]]:
             with lock:
                 table_path = f"{str(self.self_addr.replace('.', '_'))}.json"
                 with open(table_path, "r") as f:
@@ -88,27 +107,16 @@ class Server:
                 else:
                     value, saved_timestamp = table[key]
                     
-                    saved_timestamp = datetime.fromisoformat(
-                        saved_timestamp, 
-                        "%Y-%m-%d %H:%M:%S.%f"
-                    )
-                    
                     if timestamp is not None:
-                        timestamp = datetime.strptime(
-                            timestamp, 
-                            "%Y-%m-%d %H:%M:%S.%f"
-                        )
-                        
                         if saved_timestamp >= timestamp:
-                            response = (value, str(saved_timestamp))
+                            response = (value, saved_timestamp)
                         else:
                             response = "TRY_OTHER_SERVER_OR_LATER"
                     else:
-                        response = (value, str(saved_timestamp))
+                        response = (value, saved_timestamp)
                         
             return response
-                    
-                    
+            
         def __replicate(
             self, 
             key: str, 
@@ -116,26 +124,28 @@ class Server:
             timestamp: str, 
             addr: Address
         ) -> bool:
-            package = Message(
-                request_type = "REPLICATION",
-                key = key,
-                vaue = value,
-                timestamp = timestamp
-            )
-            package = json.dumps(package.__dict__)
-            
             S = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             S.connect(addr)
-            S.send(package)
+            S.send(
+                self.__serialize(Message(
+                    request_type = "REPLICATION",
+                    key = key,
+                    value = value,
+                    timestamp = timestamp
+                ))
+            )
             
             while True:
-                response: Message = json.loads(S.recv(1024).decode())
+                response: Message = self.__deserialize(S.recv(BUFFER))
                 if response.request_type == "REPLICATION_OK":
                     break
             
             S.close()
             
             return True
+        
+        def __simulate_delay(self) -> int:
+            return 0
             
         def run(self):
             request = self.__get_request()
@@ -152,18 +162,21 @@ class Server:
                     ))
                     
                     for addr in [x for x in SERVER_ADDRESS if x != self.self_addr]:
+                        sleep(self.__simulate_delay())
                         self.__replicate(
                             request.key, 
                             request.value, 
                             timestamp, 
                             addr
                         )
-                        
+                    
                     self.client_conn.send(
-                        json.dumps(Message(
+                        self.__serialize(Message(
                             request_type = "PUT_OK",
+                            key = request.key,
+                            value = request.value,
                             timestamp = timestamp
-                        ).__dict__)
+                        ))
                     )
                     
                     logging.info(
@@ -174,15 +187,18 @@ class Server:
                             timestamp
                         )
                     )
+                    
                 else:
                     S = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                     S.connect(self.leader_addr)
-                    S.send(json.dumps(request.__dict__))
+                    S.send(self.__serialize(request))
                     
                     logging.info("Encaminhando PUT key:{} value:{}".format(
                         request.key,
                         request.value
                     ))
+                    
+                    S.close()
             elif request.request_type == "REPLICATION":
                 timestamp = self.__put_key(
                     key = request.key,
@@ -191,7 +207,7 @@ class Server:
                 )
                 
                 self.client_conn.send(
-                    json.dumps(Message(
+                    self.__serialize(Message(
                         request_type = "REPLICATION_OK"
                     ))
                 )
@@ -205,26 +221,26 @@ class Server:
                 response = self.__get_key(request.key, request.timestamp)
                 
                 if response is None:
-                    package = json.dumps(Message(
+                    package = Message(
                         request_type = "ERROR",
                         key = request.key,
                         value = "EMPTY"
-                    ).__dict__)
+                    )
                 elif type(response) == str:
-                    package = json.dumps(Message(
+                    package = Message(
                         request_type = "ERROR",
                         key = request.key,
                         value = response
-                    ))
+                    )
                 else:
-                    package = json.dumps(Message(
+                    package = Message(
                         request_type = "GET_OK",
                         key = request.key,
                         value = response[0],
                         timestamp = response[1]
-                    ))
+                    )
                 
-                self.client_conn.send(package)
+                self.client_conn.send(self.__serialize(package))
                 
                 logging.info("Cliente {}:{} GET key:{} ts:{}. ""Meu ts é {}, portanto devolvendo {}.".format(  # noqa: E501
                     self.addr[0],
@@ -234,6 +250,8 @@ class Server:
                     "EDITAR",
                     "EDITAR"
                 ))
+                
+            self.client_conn.close()
             
     def __init__(
         self, 
@@ -244,7 +262,7 @@ class Server:
         self.addr = addr
         self.leader_addr = leader_addr
         
-        self.is_leader = is_leader
+        self.is_leader = self.addr == self.leader_addr
         
         self.__init_hash_table()
         
@@ -262,17 +280,17 @@ class Server:
         
         Inicializa um socket e o vincula ao endereço definido para o servidor. Configura
         o socket para receber conexões e, para cada nova conexão aceita, inicia uma 
-        thread separada com a classe auxiliar RequestWorker a fim de processar a requi-
-        sição do peer.
+        thread separada com a classe auxiliar RequestWorker a fim de processar requisi-
+        ções de clientes e outros servidores.
         """     
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket.setsockopt(socket.SQL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.socket.setsockopt(socket.SQL_SOCKET, socket.SO_REUSEPORT, 1)
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
         self.socket.bind(self.addr)
         self.socket.listen(5)
         
         while True:
-            conn, addr = self.s.accept()
+            conn, addr = self.socket.accept()
             self.RequestWorker(
                 self.addr,
                 self.leader_addr,
@@ -314,18 +332,10 @@ if __name__ == "__main__":
         type = int,
         dest = 'leader_port'
     )
-    parser.add_argument(
-        '--is_leader',
-        '-il',
-        action = 'store_true',
-        dest = 'is_leader'
-    )
-    
     args = parser.parse_args()
     
     server = Server(
         addr = (args.ip, args.port),
-        leader_addr = (args.leader_ip, args.leader_port),
-        is_leader = args.is_leader
+        leader_addr = (args.leader_ip, args.leader_port), 
     )
     server.run()
