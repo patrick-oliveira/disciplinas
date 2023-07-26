@@ -314,6 +314,10 @@ class Server:
                 else:
                     value, saved_timestamp = table[key]
                     
+                    print(value)
+                    print(saved_timestamp)
+                    print(timestamp)
+                    
                     if timestamp is not None:
                         if saved_timestamp >= timestamp:
                             response = (value, saved_timestamp)

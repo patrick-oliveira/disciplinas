@@ -88,11 +88,17 @@ class Client:
                 
 
             elif self.request_type == "GET":
+                key_data = self.__get_timestamp(self.key)
+                if key_data is not None:
+                    _, timestamp = tuple(key_data)
+                else:
+                    timestamp = None
+                    
                 s.send(
                     self.__serialize(Message(
                         request_type = "GET",
                         key = self.key,
-                        timestamp = self.__get_timestamp(self.key)
+                        timestamp = timestamp
                     ))
                 )
                 
@@ -112,7 +118,7 @@ class Client:
                         )
                     )
                 else:
-                    print(response.value)
+                    print(response.value, self.server_addr)
                     
                 s.close()
             
