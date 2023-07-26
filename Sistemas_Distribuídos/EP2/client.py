@@ -112,7 +112,7 @@ class Client:
                 response: Message = self.__get_request(s)
                 
                 if response.request_type != "ERROR":
-                    self.__update_timestamp(self.key, response.value, response.timestamp)
+                    self.__update_timestamp(self.key, response.value, response.timestamp)  # noqa: E501
                     
                     logging.info(
                         "GET key: {} value {} obtido do servidor {}:{}, meu timestamp {} e do servidor {}".format(  # noqa: E501
