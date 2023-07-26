@@ -4,7 +4,7 @@ import sys
 import argparse
 import os
 import json
-
+from random import randint
 from time import time, sleep
 from message import Message
 from threading import (Lock,
@@ -47,15 +47,14 @@ class Server:
             self_addr: Address,
             leader_addr: Address,
             client_conn: Socket, 
-            client_addr: Address, 
-            is_leader: bool = False
+            client_addr: Address
         ):
             super().__init__()
             self.self_addr = self_addr
             self.leader_addr = leader_addr
             self.client_conn = client_conn
             self.client_addr = client_addr
-            self.is_leader = is_leader
+            self.is_leader = self_addr == leader_addr
             
         def run(self):
             """
@@ -124,7 +123,13 @@ class Server:
                     
                 else:
                     S = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    S.connect(self.leader_addr)
+                    
+                    try:
+                        S.connect(self.leader_addr)
+                    except ConnectionRefusedError:
+                        self.client_conn.close()
+                        return
+                    
                     S.sendall(self.__serialize(request))
                     
                     logging.info("Encaminhando PUT key:{} value:{}".format(
@@ -147,7 +152,7 @@ class Server:
                     ))
                 )
                 
-                logging.info("REPLCIATION key:{} value:{} ts:{}".format(
+                logging.info("REPLICATION key:{} value:{} ts:{}".format(
                     request.key,
                     request.value,
                     request.timestamp
@@ -314,11 +319,11 @@ class Server:
                 else:
                     value, saved_timestamp = table[key]
                     
-                    print(value)
-                    print(saved_timestamp)
-                    print(timestamp)
+                    # print(value)
+                    # print(saved_timestamp)
+                    # print(timestamp)
                     
-                    if timestamp is not None:
+                    if float(timestamp) != 0:
                         if saved_timestamp >= timestamp:
                             response = (value, saved_timestamp)
                         else:
@@ -376,7 +381,7 @@ class Server:
             Returns:
                 int: Tempo em segundos de espera antes do envio do REPLICATE.
             """
-            return 5
+            return randint(3, 5)
             
     def __init__(
         self, 
@@ -422,8 +427,7 @@ class Server:
                 self.addr,
                 self.leader_addr,
                 conn, 
-                addr, 
-                self.is_leader
+                addr
             ).start()
     
     

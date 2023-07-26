@@ -68,7 +68,14 @@ class Client:
             sido retornada uma resposta válida, atualiza o dicionário de keys.
             """
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.connect(self.server_addr)
+            try:
+                s.connect(self.server_addr)
+            except ConnectionRefusedError:
+                logging.info(f"Erro de conexão no endereço {self.server_addr}. Conexão negada.")  # noqa: E501
+                return
+            except Exception:
+                logging.info(f"Erro de conexão no endereço {self.server_addr}.")
+                return
             
             if self.request_type == "PUT":
                 wait_thread, wait_addr = self.__wait_put_ok()
@@ -92,7 +99,7 @@ class Client:
                 if key_data is not None:
                     _, timestamp = tuple(key_data)
                 else:
-                    timestamp = None
+                    timestamp = 0
                     
                 s.send(
                     self.__serialize(Message(
@@ -113,12 +120,12 @@ class Client:
                             response.value,
                             self.server_addr[0],
                             self.server_addr[1],
-                            self.__get_timestamp(self.key),
+                            timestamp,
                             response.timestamp
                         )
                     )
                 else:
-                    print(response.value, self.server_addr)
+                    print("GET ERROR", response.value, self.server_addr)
                     
                 s.close()
             
@@ -337,30 +344,32 @@ if __name__ == "__main__":
             opt = input()
             opt = opt.split(" ")
             opt, params = opt[0], opt[1:]
+        
+            if opt == "0":
+                server_address = []
+                for _ in range(1, args.num_servers + 1):
+                    addr = input(f"Endereço do servidor {_}: ")
+                    ip, porta = addr.split(" ")
+                    server_address.append((ip, int(porta)))
+                
+                client = Client(server_address = server_address)
+                
+            elif opt == "1":
+                if client is not None:
+                    key, value = tuple(params)
+                    client.put(key, value)
+                    
+            elif opt == "2":
+                if client is not None:
+                    key = params.pop()
+                    client.get(key)
+                    
+            elif opt == '99':
+                key = params.pop()
+                while True:
+                    client.get(key)
+                    sleep(0.5)
         except IndexError:
             continue
-        
-        if opt == "0":
-            server_address = []
-            for _ in range(1, args.num_servers + 1):
-                addr = input(f"Endereço do servidor {_}: ")
-                ip, porta = addr.split(" ")
-                server_address.append((ip, int(porta)))
-            
-            client = Client(server_address = server_address)
-            
-        elif opt == "1":
-            if client is not None:
-                key, value = tuple(params)
-                client.put(key, value)
-                
-        elif opt == "2":
-            if client is not None:
-                key = params.pop()
-                client.get(key)
-                
-        elif opt == '99':
-            # Alternativa auxiliar para testar o erro de latência
-            while True:
-                client.get("0")
-                sleep(0.5)
+        except ValueError:
+            continue
