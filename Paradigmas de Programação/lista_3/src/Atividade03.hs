@@ -1,0 +1,27 @@
+module Atividade03
+    ( integersDePrimos,
+    bissextos32,
+    pop,
+    range,
+    palindrome,
+    maximo,
+    minimo,
+    media,
+    xou,
+    ehQuadradoPerfeito,
+    ehSaudavel,
+    penultimo,
+    isHead,
+    isSecond,
+    isAt,
+    mediaLista,
+    isFirstEqualThird,
+    quadradoMaisProximo,
+    ethiopianMultiplication,
+    isEven,
+    isOdd,
+    naturais,
+    pp,
+    natdesc
+    ) where
+
