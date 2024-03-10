@@ -35,8 +35,10 @@ mult83 n
 {-Exercício 04: Faça uma função {ehPrimo n} que determina se um número é primo..-}
 ehPrimo :: Integral a => a -> Bool
 ehPrimo n
-    | mod n 2 == 0 = True
-    | otherwise = False
+    | n == 1 = False
+    | n == 2 = True
+    | or [mod n x == 0 | x <- [2..n-1]] = False
+    | otherwise = True
 
 {-Exercício 05: Faça uma função {bissextos} que retorne todos os anos bissextos até 2020, começando pelo ano 1584.-}
 bissextos :: [Integer]
@@ -65,7 +67,7 @@ quad :: Int -> Int
 quad a = a ^ 2
 
 cumprimentar :: String -> String
-cumprimentar nome = "Olá, " ++ nome
+cumprimentar nome = "Olá " ++ nome
 
 aniversario :: Int -> String
-aniversario ano = "Você fará " ++ show (2023 - ano) ++ " em 2023!"
+aniversario ano = "Você fará " ++ show (2023 - ano) ++ " anos em 2023!"

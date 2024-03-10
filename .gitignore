@@ -8,3 +8,6 @@ bin
 *.out
 __pycache__
 *.json
+.stack-work
+*.lock
+.cabal
