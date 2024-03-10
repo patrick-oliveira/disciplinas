@@ -94,6 +94,6 @@ ex10Test = testGroup "ex10"
               testCase "test2" (assertEqual "Test 2" (-6) (dobro (-3))),
               testCase "test3" (assertEqual "Test 3" 9 (quad (-3))),
               testCase "test4" (assertEqual "Test 4" "Olá pessoa" (cumprimentar "pessoa")),
-              testCase "test5" (assertEqual "Test 5" "Você fará 22 anos em 2022!" (aniversario 2000)),
-              testCase "test6" (assertEqual "Test 6" "Você fará 42 anos em 2022!" (aniversario 1980))
+              testCase "test5" (assertEqual "Test 5" "Você fará 23 anos em 2023!" (aniversario 2000)),
+              testCase "test6" (assertEqual "Test 6" "Você fará 43 anos em 2023!" (aniversario 1980))
             ]
