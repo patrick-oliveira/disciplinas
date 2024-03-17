@@ -1,4 +1,3 @@
-[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-24ddc0f5d75046c5622901739e7c5dd533143b0c8e959d652212380cedb1ea36.svg)](https://classroom.github.com/a/KhBwAW_N)
 # Exercícios
 
 1. Faça uma função `integersDePrimos xs` que receba uma lista de inteiros e retorna uma lista de inteiros com os números primos contidos na lista original (dica: na lista da semana passada havia uma questão para desenvolver uma função que informava se um número é primo ou não).
