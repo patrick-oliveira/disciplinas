@@ -1,0 +1,43 @@
+name:                atividade09
+version:             0.1.0.0
+-- synopsis:
+-- description:
+homepage:            https://github.com/githubuser/atividade09#readme
+license:             BSD3
+license-file:        LICENSE
+author:              Author name here
+maintainer:          example@example.com
+copyright:           2022 Author name here
+category:            Web
+build-type:          Simple
+cabal-version:       >=1.10
+extra-source-files:  README.md
+
+library
+  exposed-modules:
+      Atividade09
+  other-modules:
+      NatTools, LeftistHeap, DummyHeap, SafeLeftistHeap
+  hs-source-dirs:
+      src
+  ghc-options: -O2 -Wall -fplugin GHC.TypeLits.KnownNat.Solver
+  build-depends:
+      base >=4.7 && <5
+    , containers
+    , ghc-typelits-knownnat
+  default-language: Haskell2010
+
+test-suite atividade09-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  hs-source-dirs:
+      test
+  ghc-options: -O2 -Wall
+  build-depends:
+      atividade09
+    , base >=4.7 && <5
+    , containers
+    , tasty
+    , tasty-hunit
+    , tasty-quickcheck
+  default-language: Haskell2010
