@@ -155,9 +155,9 @@ No exemplo acima, supomos um jogo com um tabuleiro com coordenadas identificadas
 
 ```
 |Position| = |Coordinates| x |Occupied|
-	       = (|Int| x |Int|) x (1 + |Piece|)
-	       = (|Int| x |Int|) + |Int| x |Int| x |Piece|
-           = |Coordinates| + |Coordinates| x |Piece|
+= (|Int| x |Int|) x (1 + |Piece|)
+= (|Int| x |Int|) + |Int| x |Int| x |Piece|
+= |Coordinates| + |Coordinates| x |Piece|
 ```
 
 O que significa dizer que $\text{|Coordinates|} + \text{|Coordinates|}\times \text{|Piece|} = \text{|Coordinates|} \times \text{|Occupied|}$? Que poderíamos representar as posições de duas formas: associando a cada coordenada a informação de que ela está vazia ou ocupada, e caso esteja ocupada, o que a ocupa; separando as posições em dois conjuntos, um primeiro com as coordenadas vazias, e outro com as coordenadas ocupadas, associadas à informação do que a ocupa.
