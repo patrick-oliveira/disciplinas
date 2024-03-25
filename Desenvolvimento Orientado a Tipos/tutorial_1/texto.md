@@ -184,7 +184,7 @@ E de forma mais geral, tal mapeamento é possível para _quaisquer dois tipos co
 
 Uma função faz um mapeamento de elementos de um tipo $a$ em elementos de um tipo $b$, assim, o tipo de uma função $f$ é dado por $a \to b$. Para cada elemento $x$ do $a$, podemos escolher um dentre $|b|$ elementos $y$ do tipo $b$ tais que $f(x) = y$. Portanto, o número de  mapeamentos possíveis de $a$ em $b$ é dado por
 
-$\prod^{|a|}_{n=1}|b|$
+$\prod|b|$
 
 e vale então que $|f| = b^a$.
 
