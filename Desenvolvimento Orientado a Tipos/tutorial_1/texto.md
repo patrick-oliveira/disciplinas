@@ -279,3 +279,50 @@ f_ w = (w . Left, w . Right)
 ```
 
 Enfim, encerrando este desvio teórico, ao passo que qualquer número natural pode ser representado como somas e produtos de outros números naturais, segue que todo tipo de dado possui uma chamada *representação canônica* da forma $t = \sum_{m}\prod_{n} t_{m, n}$, em que $t_{m, n}$ denota tipos Som e Produto. Um conjunto de tipos, todos de cardinalidade $|t|$, são isomórficos mutualmente e possuem uma mesma representação canônica.
+
+# Tipos Recursivos
+
+A linguagem Haskell nos permite construir tipos recursivos a partir de tipos algébricos. Por exemplo, podemos construir um tipo para os números naturais:
+
+```haskell
+data Nat = Zero | Succ Nat
+```
+
+O que poderia ser expandido indefinidamente,
+
+```
+Succ (Succ ( Succ ( ... ( Succ Zero) ...)))
+```
+
+Desconsiderando limitações de memória do computador, a cardinalidade de Nat é infinita, dada por $|Nat| = 1 + (1 + (1 + (...)))$. Algebricamente, sabemos que qualquer conjunto discreto infinito é isomorfo ao conjunto dos números naturais, ao passo que podemos enumerar os seus elementos. Portanto, a representação acima é isomórfica a um tipo soma enumerando cada um dos números naturais (ou até quanto quiséssemos ou pudéssemos enumerar), isto é
+
+```haskell
+data One = Succ Zero
+data Two = Succ (Succ Zero)
+data Three = Succ (Succ (Succ Zero))
+
+data Nat' = One | Two | Three
+```
+
+Uma outra estrutura definida de forma recursiva é a lista:
+
+```haskell
+data List a = Empty | Cons a (List a)
+```
+
+Note que o segundo elemento é agora um tipo produto, portanto, ao calcularmos a cardinalidade de List a, teríamos 
+
+$
+|List a| = 1 + |a|\times(1 + |a|\times(1 + |a|\times(...)))
+$
+
+Seja $|List a| = L(a)$, então $L(a) = 1 + a + a^2 + a^3 + \ldots$, como se estivéssemos enumerando as listas vazia, com um elemento de tipo |a|, dois elementos, e assim por diante.
+
+Podemos pensar em um exemplo de tipo de dado para representar um arquivo Json, que consiste em um mapeamento de chaves do tipo string, em valores, que podem ser outro mapeamento, ou valores literais: string, double, int, listas. O mapeamento propriamente dito pode ser representado como uma lista de pares. Assim:
+
+```haskell
+data Map a = [(String, a)]
+
+data Literal = Int | Float | String
+data Json = Literal | [Literal] | Map Json
+```
