@@ -13,12 +13,26 @@ newtype NNome  = CNome String
 
 helloFulano :: NNome -> String
 helloFulano (Cnome n) = print $ "Olá, " ++ n
+
+exemploNome :: IO ()
+exemploNome =
+	do
+		let nome = CNome "Fulano"
+		putStrLn $ helloFulano nome
 ```
 
 A função *helloFulano* funcionará apenas com um argumento do tipo NNome, e para isso o newtype introduz um construtor “CNome” que transforma um argumento do tipo String em um elemento do tipo NNome. O construtor é essencialmente um envelope, e poderíamos, inclusive, parametrizá-lo:
 
 ```haskell
 newtype AbstractType a = AbstractType a
+
+exemploAbstractType :: IO ()
+exemploAbstractType =
+    do
+        let abstractType = AbstractType 10
+        print abstractType
+        let otherAbstractType = AbstractType "Hello"
+        print otherAbstractType
 ```
 
 Aqui, nomeados o construtor com o mesmo nome do tipo, e ele transforma qualquer tipo de entrada em um elemento do tipo "AbstractType". Porém, o newtype nos permite trabalhar apenas com um único construtor e um único argumento, sendo assim muito limitado no que diz respeito à construção de tipos de dados estruturalmente mais arrojados.
@@ -52,6 +66,13 @@ newtype Chance = Double
 data Chuva = Chuva Volume Chance
 
 data PrevisaoTempo = Previsao Temperatura Chuva
+
+previsaoDeHoje :: IO ()
+previsaoDeHoje =
+    do
+        let chuva = Chuva (Volume 10) (Probabilidade 0.5)
+        let temperatura = Celcius 25
+        print $ Previsao temperatura chuva
 ```
 
 O fato de podermos construir novos tipos através destas “operações” do tipo Soma e Produto atribui a estes títulos o nome de “tipos algébricos”. Porém, isto não é meramente um apelido, existindo de fato uma estrutura algébrica formal subjacente ao processo de construção de tipos a partir dos blocos básicos Soma e Produto.
@@ -118,6 +139,14 @@ threshold (Left x)
 threshold (Right x)
 	| x > 0 = Just x
 	| otherwise = Nothing
+
+testeThreshold :: IO ()
+testeThreshold =
+    do
+        print $ threshold (Left 5)
+        print $ threshold (Right 5)
+        print $ threshold . comutaEither $ Left 5
+        print $ threshold . comutaEither $ Right 5
 ```
 
 Com a função acima, temos que _threshold Left 5 = Nothing_, mas threshold (comutaEither Left 5) = threshold (Right 5) = Just 5. Não vale, pois, a comutatividade. Similarmente, a posição do valor na tupla do tipo Produto também pode ter interpretações particulares, de modo que trocar a posição do valor pode implicar em erros na execução do programa.
@@ -294,14 +323,11 @@ O que poderia ser expandido indefinidamente,
 Succ (Succ ( Succ ( ... ( Succ Zero) ...)))
 ```
 
-Desconsiderando limitações de memória do computador, a cardinalidade de Nat é infinita, dada por $|Nat| = 1 + (1 + (1 + (...)))$. Algebricamente, sabemos que qualquer conjunto discreto infinito é isomorfo ao conjunto dos números naturais, ao passo que podemos enumerar os seus elementos. Portanto, a representação acima é isomórfica a um tipo soma enumerando cada um dos números naturais (ou até quanto quiséssemos ou pudéssemos enumerar), isto é
+Desconsiderando limitações de memória do computador, a cardinalidade de Nat é infinita, dada por $|\text{Nat}| = 1 + (1 + (1 + (...)))$. Algebricamente, sabemos que qualquer conjunto discreto infinito é isomorfo ao conjunto dos números naturais, ao passo que podemos enumerar os seus elementos. Portanto, a representação acima é isomórfica a um tipo soma enumerando cada um dos números naturais (ou até quanto quiséssemos ou pudéssemos enumerar), isto é
 
 ```haskell
-data One = Succ Zero
-data Two = Succ (Succ Zero)
-data Three = Succ (Succ (Succ Zero))
-
 data Nat' = One | Two | Three
+    deriving Enum
 ```
 
 Uma outra estrutura definida de forma recursiva é a lista:
@@ -310,19 +336,115 @@ Uma outra estrutura definida de forma recursiva é a lista:
 data List a = Empty | Cons a (List a)
 ```
 
-Note que o segundo elemento é agora um tipo produto, portanto, ao calcularmos a cardinalidade de List a, teríamos 
+Note que o segundo elemento é agora um tipo produto, portanto, ao calcularmos a cardinalidade de List a, teríamos $|\text{List a}| = 1 + |a|\times(1 + |a|\times(1 + |a|\times(...)))$.
 
-$
-|List a| = 1 + |a|\times(1 + |a|\times(1 + |a|\times(...)))
-$
-
-Seja $|List a| = L(a)$, então $L(a) = 1 + a + a^2 + a^3 + \ldots$, como se estivéssemos enumerando as listas vazia, com um elemento de tipo |a|, dois elementos, e assim por diante.
+Seja $|\text{List a}| = L(a)$, então $L(a) = 1 + a + a^2 + a^3 + \ldots$, como se estivéssemos enumerando as listas vazia, com um elemento de tipo |a|, dois elementos, e assim por diante. Esta mesma expressão pode ser obtida considerando que $L(a) = 1 + a\times L(a)$ é a representação algébrica do tipo List definido acima. Por manipulação algébrica, obtemos que $L(a) = 1 / (1 - a)$ e a expansão por Série de Taylor da expressão $1 / (1 - a)$ é simplesmente $1 + a + a^2 + a^3 + \ldots$.
 
 Podemos pensar em um exemplo de tipo de dado para representar um arquivo Json, que consiste em um mapeamento de chaves do tipo string, em valores, que podem ser outro mapeamento, ou valores literais: string, double, int, listas. O mapeamento propriamente dito pode ser representado como uma lista de pares. Assim:
 
 ```haskell
-data Map a = [(String, a)]
-
-data Literal = Int | Float | String
-data Json = Literal | [Literal] | Map Json
+data Json =
+    JInt Int
+    | JFloat Float
+    | JString String
+    | JBool Bool
+    | JList [Json]
+    | JMap [(String, Json)]
+    deriving Show
 ```
+
+Utilizando pattern matching, podemos facilmente construir um parser para transformar esta estrutura em uma string:
+
+```haskell
+jsonToString :: Json -> String
+jsonToString (JInt n) = show n
+jsonToString (JFloat f) = show f
+jsonToString (JString s) = "\"" ++ s ++ "\""
+jsonToString (JBool b) = if b then "true" else "false"
+jsonToString (JList xs) = "[" ++ intercalate ", " (map jsonToString xs) ++ "]"
+jsonToString (JMap kvs) = "{" ++ intercalate ", " (map (\(k, v) -> "\"" ++ k ++ "\": " ++ jsonToString v) kvs) ++ "}"
+
+exemploJson:: IO ()
+exemploJson = do
+    let json = JMap [("nome", JString "João"), ("idade", JInt 20), ("endereço", JMap [("rua", JString "Rua 1"), ("cidade", JString "Cidade 1")])]
+    print json
+    putStrLn $ jsonToString json
+```
+
+```bash
+ghci> exemploJson
+JMap [("nome",JString "Jo\227o"),("idade",JInt 20),("endere\231o",JMap [("rua",JString "Rua 1"),("cidade",JString "Cidade 1")])]
+{"nome": "João", "idade": 20, "endereço": {"rua": "Rua 1", "cidade": "Cidade 1"}}
+```
+
+# Derivando Estruturas de Dados
+
+Como mencionado anteriormente, uma das possibilidades apresentadas pelos tipos de dados algébricas é a dedução de novas estruturas a partir da manipulação sobre a representação algébrica de um determinado tipo. Podemos dar um exemplo inicial a partir do conceito de derivada.
+
+Em cálculo, começamos aprendendo que a derivada de uma função nos da sua taxa de variação em um ponto. Podemos começar entendendo a derivada, ou o processo de derivação, como um _operador_, ou uma função, que opera sobre o domínio das funções diferenciáveis e tem por contradomínio também um conjunto de funções. Para uma função $f$, determinamos uma função $Df_a$ que nos dá uma aproximação do comportamento local da função $f$ ao redor do ponto $a$, como um _zoom_. Noção semelhante existe no contexto de tipos, e o que obtemos ao darmos um _zoom_ em uma estrutura de dados é chamado de Zipper. 
+
+Tomando a lista como exemplo, obtemos antes que a representação algébrica do tipo era dada por $L(a) = 1 / (1 - a)$. A derivada desta função é dada por
+
+$
+L'(a) = \frac{1}{1 - a} \times \frac{1}{1 - a}
+$
+
+A expressão acima corresponde ao seguinte tipo de dado:
+
+```haskell
+data ListDerivative a = ListDerivative [a] [a]
+
+diffOperator :: [a] -> ListDerivative a
+diffOperator la = ListDerivative [] la
+
+-- Isto não é exatamente uma função inversa, mas para fins didáticos...
+diffOperatorInverse :: ListDerivative a -> [a]
+diffOperatorInverse (ListDerivative la ra) = reverse la ++ ra
+```
+
+Podemos interpretar esta estrutura pensando que, ao darmos um zoom em um elemento da lista, temos acesso ao elemento, e também ao contexto dos elementos adjacentes, e na medida em que nos movemos pela lista (i.e. calculando a derivada em diferentes pontos), obtemos informações locais da estrutura.
+
+```haskell
+context :: ListDerivative a -> Maybe a
+context (ListDerivative _ []) = Nothing
+context (Z la [a:ra]) = Just a
+
+moveUp :: ListDerivative a -> ListDerivative a
+moveUp (ListDerivative la (x:ra)) = ListDerivative (x:la) ra
+
+moveDown :: ListDerivative a -> ListDerivative a
+moveDown (ListDerivative (x:la) ra) = ListDerivative la (x:ra)
+```
+
+A lista da direita é, evidentemente, os elementos à direita do ponto no qual focamos. Ao passo que uma lista é a concatenação à direita de elementos, a lista da esquerda no Zipper é _o inverso_ da sequência de elementos à esquerda do ponto focal. Assim, o primeiro elemento de ra é o elemento imediatamente à esquerda de $a$, na função acima.
+
+Executando o seguinte exemplo,
+
+```haskell
+exemploDerivadaLista :: IO ()
+exemploDerivadaLista = do
+    let lista = [1, 2, 3, 4, 5] :: [Int]
+    let derivada = diffOperator lista
+    print derivada
+    print $ context derivada
+    print $ moveUp derivada
+    let derivada' = moveUp $ moveUp derivada
+    print derivada'
+    print $ context derivada'
+    print $ moveDown $ moveUp $ moveUp derivada
+    print $ diffOperatorInverse $ moveDown $ moveUp derivada
+```
+
+obtemos o resultado:
+
+```bash
+ghci> exemploDerivadaLista 
+ListDerivative [] [1,2,3,4,5]
+Just 1
+ListDerivative [1] [2,3,4,5]
+ListDerivative [2,1] [3,4,5]
+Just 3
+ListDerivative [1] [2,3,4,5]
+[1,2,3,4,5]
+```
+

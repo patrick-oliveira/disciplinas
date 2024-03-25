@@ -9,7 +9,7 @@ exemploNome :: IO ()
 exemploNome =
     do
         let nome = CNome "Fulano"
-        print $ helloFulano nome
+        putStrLn $ helloFulano nome
 
 -- *********************************************************************************************************************
 
@@ -32,8 +32,6 @@ data Prod a b = Prod a b
 data Bool = True | False
 
 data Vector2D = Vector2D Double Double
-
-
 -- *********************************************************************************************************************
 
 newtype Volume = Volume Double

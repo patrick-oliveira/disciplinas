@@ -24,6 +24,7 @@ prodAssocLeft ((a, b), c) = (a, (b, c))
 prodAssocRight :: (a, (b, c)) -> ((a, b), c)
 prodAssocRight (a, (b, c)) = ((a, b), c)
 
+
 -- Comutando operações
 comutaEither :: Either a b -> Either b a
 comutaEither (Left a) = Right a
