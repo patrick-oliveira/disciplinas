@@ -21,6 +21,11 @@ exemploNome =
 		putStrLn $ helloFulano nome
 ```
 
+```bash
+ghci> exemploNome 
+Olá, Fulano
+```
+
 A função *helloFulano* funcionará apenas com um argumento do tipo NNome, e para isso o newtype introduz um construtor “CNome” que transforma um argumento do tipo String em um elemento do tipo NNome. O construtor é essencialmente um envelope, e poderíamos, inclusive, parametrizá-lo:
 
 ```haskell
@@ -33,6 +38,12 @@ exemploAbstractType =
         print abstractType
         let otherAbstractType = AbstractType "Hello"
         print otherAbstractType
+```
+
+```bash
+ghci> exemploAbstractType 
+AbstractType 10
+AbstractType "Hello"
 ```
 
 Aqui, nomeados o construtor com o mesmo nome do tipo, e ele transforma qualquer tipo de entrada em um elemento do tipo "AbstractType". Porém, o newtype nos permite trabalhar apenas com um único construtor e um único argumento, sendo assim muito limitado no que diz respeito à construção de tipos de dados estruturalmente mais arrojados.
@@ -73,6 +84,11 @@ previsaoDeHoje =
         let chuva = Chuva (Volume 10) (Probabilidade 0.5)
         let temperatura = Celcius 25
         print $ Previsao temperatura chuva
+```
+
+```bash
+ghci> previsaoDeHoje 
+Previsao (Celcius 25.0) (Chuva (Volume 10.0) (Probabilidade 0.5))
 ```
 
 O fato de podermos construir novos tipos através destas “operações” do tipo Soma e Produto atribui a estes títulos o nome de “tipos algébricos”. Porém, isto não é meramente um apelido, existindo de fato uma estrutura algébrica formal subjacente ao processo de construção de tipos a partir dos blocos básicos Soma e Produto.
@@ -148,6 +164,15 @@ testeThreshold =
         print $ threshold . comutaEither $ Left 5
         print $ threshold . comutaEither $ Right 5
 ```
+
+```bash
+ghci> testeThreshold 
+Nothing
+Just 5
+Just 5
+Nothing
+```
+
 
 Com a função acima, temos que _threshold Left 5 = Nothing_, mas threshold (comutaEither Left 5) = threshold (Right 5) = Just 5. Não vale, pois, a comutatividade. Similarmente, a posição do valor na tupla do tipo Produto também pode ter interpretações particulares, de modo que trocar a posição do valor pode implicar em erros na execução do programa.
 
@@ -276,6 +301,18 @@ stateChange =
 		print $ board yetAnotherState C0 C1
 		print $ board yetAnotherState C1 C0
 		print $ board yetAnotherState C1 C1
+```
+
+```bash
+ghci> stateChange
+False
+True
+False
+True
+True
+True
+True
+True
 ```
 
 O aumento do tamanho do tabuleiro exigiria tão somente aumentar a composição no tipo Coord, e o aumento de dimensões do reticulado envolveria apenas ajustes no número de parâmetros das funções que retornam os estados das células.
