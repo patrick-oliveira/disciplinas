@@ -182,11 +182,7 @@ E de forma mais geral, tal mapeamento é possível para _quaisquer dois tipos co
 
 # Representação Algébrica de Funções
 
-Uma função faz um mapeamento de elementos de um tipo $a$ em elementos de um tipo $b$, assim, o tipo de uma função $f$ é dado por $a \to b$. Para cada elemento $x$ do $a$, podemos escolher um dentre $|b|$ elementos $y$ do tipo $b$ tais que $f(x) = y$. Portanto, o número de  mapeamentos possíveis de $a$ em $b$ é dado por
-
-$\prod|b|$
-
-e vale então que $|f| = b^a$.
+Uma função faz um mapeamento de elementos de um tipo $a$ em elementos de um tipo $b$, assim, o tipo de uma função $f$ é dado por $a \to b$. Para cada elemento $x$ do $a$, podemos escolher um dentre $|b|$ elementos $y$ do tipo $b$ tais que $f(x) = y$. Portanto, o número de  mapeamentos possíveis de $a$ em $b$ é dado por $|f| = b^a$.
 
 Para ilustrar o benefício de se poder transformar algebricamente um tipo em outro, suponhamos agora que precisamos de uma estrutura de dados que represente o tabuleiro inteiro de uma só vez, e não somente as posições isoladas. Para um tabuleiro com lados de tamanho 2, teríamos, por exemplo:
 
